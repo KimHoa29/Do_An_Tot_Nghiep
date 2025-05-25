@@ -1,0 +1,108 @@
+﻿.text-navy {
+    color: #003366; /* Màu xanh than */
+    font-size: 2rem; /* Kích thước font */
+    font-weight: bold; /* Chữ in đậm */
+}
+
+
+.table-navy th {
+    background-color: #003366; /* Màu xanh than */
+    color: white; /* Đảm bảo chữ có màu trắng để dễ đọc */
+}
+input::placeholder {
+    font-size: 0.8rem; /* Kích thước chữ nhỏ hơn */
+}
+/* Table styles */
+table {
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.85rem;
+}
+
+thead {
+    background-color: #e9ecef; /* Xám nhẹ */
+    color: #333;
+}
+
+tbody {
+    font-size: 0.82rem;
+}
+
+    tbody tr:hover {
+        background-color: #f8f9fa; /* Màu hover nhạt */
+    }
+
+td, th {
+    padding: 6px 8px;
+    vertical-align: middle;
+}
+
+/* Nút chỉ icon */
+.btn-sm {
+    padding: 6px 8px;
+    border: none;
+    background-color: transparent;
+    color: #495057;
+    transition: all 0.2s ease;
+}
+
+    .btn-sm:hover {
+        background-color: #dee2e6;
+        color: #000;
+        transform: scale(1.1);
+        border-radius: 4px;
+    }
+.btn-outline-success,
+.btn-outline-danger {
+    border-radius: 50px;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+}
+
+    .btn-outline-success:hover,
+    .btn-outline-danger:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    }
+
+/* Nút lớn */
+form button, .btn-success, .btn-danger {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+form button {
+    background-color: #6c757d;
+}
+
+    form button:hover {
+        background-color: #5a6268;
+        transform: scale(1.05);
+    }
+
+.btn-success {
+    background-color: #5cb85c;
+}
+
+    .btn-success:hover {
+        background-color: #4cae4c;
+    }
+
+.btn-danger {
+    background-color: #d9534f;
+}
+
+    .btn-danger:hover {
+        background-color: #c9302c;
+    }
+
+/* D-flex chỉnh nút */
+.d-flex {
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}

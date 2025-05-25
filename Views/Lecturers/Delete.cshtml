@@ -1,0 +1,44 @@
+﻿@model Do_An_Tot_Nghiep.Models.Lecturer
+
+@{
+    ViewData["Title"] = "Xóa giảng viên";
+}
+
+<h1>Xóa giảng viên</h1>
+
+<h3>Bạn có chắc chắn muốn xóa giảng viên này?</h3>
+<div>
+    <h4>Thông tin giảng viên</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">Mã giảng viên</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.UserId)</dd>
+
+        <dt class="col-sm-2">Họ và tên</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.FullName)</dd>
+
+        <dt class="col-sm-2">Chức vụ</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Position)</dd>
+
+        <dt class="col-sm-2">Khoa</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Department)</dd>
+
+        <dt class="col-sm-2">Chuyên môn</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Specialization)</dd>
+
+        <dt class="col-sm-2">Số điện thoại</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Phone)</dd>
+
+        <dt class="col-sm-2">Email</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.Email)</dd>
+
+        <dt class="col-sm-2">Ngày tạo</dt>
+        <dd class="col-sm-10">@Html.DisplayFor(model => model.CreatedAt)</dd>
+    </dl>
+
+    <form asp-action="Delete">
+        <input type="hidden" asp-for="LecturerId" />
+        <input type="submit" value="Xóa" class="btn btn-danger" />
+        <a asp-action="Index" class="btn btn-secondary">Quay lại danh sách</a>
+    </form>
+</div>

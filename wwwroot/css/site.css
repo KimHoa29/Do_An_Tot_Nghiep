@@ -1,0 +1,65 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+/* Comment highlight animation */
+@keyframes highlightFade {
+    0% { background-color: #fff3cd; }
+    100% { background-color: transparent; }
+}
+
+.comment.highlight {
+    animation: highlightFade 3s ease-out;
+}
+
+/* Smooth transition for comment background */
+.comment {
+    transition: background-color 0.3s ease-out;
+}
+
+.comment-content {
+    transition: all 0.3s ease-out;
+}
+
+.comment:hover .comment-content {
+    background-color: #e9ecef !important;
+}
+
+.mentioned-users {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.mentioned-users h6 {
+    color: #6c757d;
+    margin-bottom: 8px;
+}
+
+.mentioned-users .badge {
+    font-size: 0.9em;
+    padding: 5px 10px;
+}
+
+.mentioned-users .badge i {
+    margin-right: 3px;
+}

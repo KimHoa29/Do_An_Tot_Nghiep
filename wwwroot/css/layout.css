@@ -1,0 +1,378 @@
+﻿/* layout.css */
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    margin-bottom: 60px;
+}
+
+/* Tạo khu vực chứa logo và chữ */
+.logo-container {
+    display: flex;
+    align-items: center; /* Căn chỉnh logo và chữ theo chiều ngang */
+    justify-content: center; /* Căn giữa logo và chữ */
+    flex-direction: column; /* Để logo và chữ đều nằm dưới nhau */
+}
+
+/* Định dạng phần văn bản bên phải logo */
+.logo-text {
+    display: flex;
+    flex-direction: column; /* Cả 2 chữ sẽ xếp theo chiều dọc */
+    align-items: center; /* Căn giữa cả hai chữ theo chiều ngang */
+}
+
+.faculty {
+    font-size: 12px;
+    font-weight: bold;
+    color: #023468;
+}
+
+.university {
+    font-size: 14px;
+    font-weight: bold;
+    color: #023468; /* Màu cam */
+}
+
+/* Menu ngang cố định ở trên cùng */
+.navbar {
+    height: 50px;
+    background: linear-gradient(to right, #FF6600, #FFB6C1); /* Màu cam đậm hơn */
+    padding: 5px 15px;
+    display: flex;
+    align-items: center; /* Căn chỉnh tất cả các phần tử trong menu ngang */
+    justify-content: space-between; /* Căn đều logo, title và tài khoản */
+    position: fixed; /* Giữ navbar luôn cố định */
+    top: 0; /* Đảm bảo navbar ở trên cùng */
+    left: 0; /* Đảm bảo navbar bắt đầu từ bên trái */
+    width: 100%; /* Đảm bảo navbar chiếm hết chiều rộng màn hình */
+    z-index: 1050; /* Đảm bảo navbar hiển thị trên sidebar */
+}
+
+.navbar-brand {
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    display: flex;
+    align-items: center;
+    flex-direction: column; /* Để logo và tên xuống dòng */
+}
+
+    .navbar-brand img {
+        margin-bottom: 5px;
+    }
+
+/* Phần "Hệ thống cố vấn học tập" chạy ngang */
+.navbar-title {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    font-weight: bold;
+    color: white;
+}
+
+.marquee {
+    display: inline-block;
+    white-space: nowrap;
+    animation: marquee 10s linear infinite;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    border-radius: 5px;
+}
+
+/* Animation cho hiệu ứng chạy chữ */
+@keyframes marquee {
+    0% {
+        transform: translateX(-100%); /* Bắt đầu ngoài bên trái */
+    }
+
+    100% {
+        transform: translateX(100%); /* Kết thúc ngoài bên phải */
+    }
+}
+
+.navbar-nav {
+    margin-left: auto;
+}
+
+    .navbar-nav .nav-link, .navbar-text {
+        font-size: 14px;
+        color: white !important;
+        padding: 5px 10px;
+    }
+
+        .navbar-nav .nav-link:hover {
+            text-decoration: underline;
+        }
+
+/* Tài khoản dropdown */
+.user-dropdown {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.user-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    border-radius: 5px;
+    min-width: 150px;
+    z-index: 1000;
+}
+
+    .user-dropdown-menu a {
+        display: block;
+        padding: 10px;
+        color: black;
+        text-decoration: none;
+    }
+
+        .user-dropdown-menu a:hover {
+            background: #f0f0f0;
+        }
+
+/* Notification styles */
+.notification-icon {
+    position: relative;
+    display: inline-block;
+    margin-right: 15px;
+    cursor: pointer;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #ff0000;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 18px;
+    text-align: center;
+}
+
+.notification-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    border-radius: 5px;
+    min-width: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+}
+
+.notification-item {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item.unread {
+    background-color: #f0f7ff;
+    border-left: 3px solid #007bff;
+}
+
+.notification-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.notification-content {
+    font-size: 12px;
+    color: #666;
+}
+
+.notification-time {
+    font-size: 10px;
+    color: #999;
+    text-align: right;
+}
+
+.notification-empty {
+    padding: 15px;
+    text-align: center;
+    color: #666;
+}
+
+.notification-footer {
+    padding: 10px;
+    text-align: center;
+    border-top: 1px solid #eee;
+}
+
+.notification-footer a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.notification-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Menu dọc hiển thị chức năng */
+.sidebar {
+    width: 220px;
+    background: white;
+    position: fixed;
+    top: 50px;
+    left: 0;
+    height: calc(100vh - 50px);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    padding-top: 20px;
+    z-index: 1000;
+    overflow-y: auto;
+    transition: width 0.3s ease;
+}
+
+/* Style cho sidebar thu gọn */
+.sidebar.collapsed {
+    width: 60px;
+}
+
+.sidebar.collapsed .nav-link span,
+.sidebar.collapsed .dropdown-menu-expand {
+    display: none;
+}
+
+.sidebar.collapsed:hover {
+    width: 220px;
+}
+
+.sidebar.collapsed:hover .nav-link span,
+.sidebar.collapsed:hover .dropdown-menu-expand {
+    display: inline-block;
+}
+
+.sidebar.collapsed .nav-link {
+    justify-content: center;
+    padding: 15px 0;
+}
+
+.sidebar.collapsed .nav-link i {
+    margin-right: 0;
+}
+
+.sidebar.collapsed:hover .nav-link {
+    text-align: left;
+    padding: 15px;
+}
+
+.sidebar.collapsed:hover .nav-link i {
+    margin-right: 10px;
+}
+
+/* Các liên kết trong sidebar */
+.sidebar a {
+    display: flex;
+    align-items: center;
+    padding: 12px 12px 12px 0; /* icon sát trái */
+    color: #023468;
+    text-decoration: none;
+    transition: 0.3s;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.sidebar a i {
+    font-size: 20px;
+    margin-right: 16px; /* tăng khoảng cách để text luôn thẳng hàng */
+    color: #023468;
+    min-width: 36px; /* icon luôn chiếm 36px, mọi icon thẳng hàng */
+    text-align: center;
+    display: inline-block;
+}
+
+.sidebar a span {
+    display: inline-block;
+    min-width: 0;
+}
+
+.sidebar a:hover, .sidebar a.active {
+    color: orange;
+}
+
+/* Nội dung chính */
+.content {
+    margin-left: 240px;
+    padding: 20px;
+    padding-top: 60px;
+    transition: margin-left 0.3s ease;
+}
+
+.content.expanded {
+    margin-left: 80px;
+}
+
+/* Điều chỉnh dropdown khi thu gọn */
+.sidebar.collapsed .dropdown-toggle::after {
+    display: none;
+}
+
+.sidebar.collapsed:hover .dropdown-toggle::after {
+    display: inline-block;
+}
+
+.dropdown-menu-expand .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 24px 12px 44px;
+    color: #023468;
+    text-decoration: none;
+    font-size: 15px;
+    transition: 0.3s;
+    white-space: nowrap;
+    overflow: hidden;
+    background: none;
+    border: none;
+}
+
+.dropdown-menu-expand .dropdown-item i {
+    font-size: 18px;
+    margin-right: 12px;
+    color: #023468;
+    min-width: 24px;
+    text-align: center;
+    display: inline-block;
+}
+
+.dropdown-menu-expand .dropdown-item:hover, .dropdown-menu-expand .dropdown-item.active {
+    color: orange;
+    background: #f8f9fa;
+}
+
+.sidebar .nav-link,
+.sidebar .dropdown-toggle {
+    display: flex;
+    align-items: center;
+    padding: 12px 12px 12px 0;
+}
+.sidebar .nav-link i,
+.sidebar .dropdown-toggle i {
+    font-size: 20px;
+    margin-right: 16px;
+    color: #023468;
+    min-width: 36px;
+    text-align: center;
+    display: inline-block;
+}
+.sidebar .nav-link span,
+.sidebar .dropdown-toggle span {
+    display: inline-block;
+}

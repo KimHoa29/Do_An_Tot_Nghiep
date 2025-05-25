@@ -1,0 +1,204 @@
+﻿@model IEnumerable<Do_An_Tot_Nghiep.Models.CommentPost>
+@{
+    ViewData["Title"] = "Danh sách bình luận";
+}
+
+<head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+    <link href="~/css/index.css" rel="stylesheet" />
+</head>
+
+<div class="comments-page">
+    <h2 class="text-center text-navy mb-4">Danh sách bình luận Góc cố vấn</h2>
+
+    <!-- Form tìm kiếm -->
+    <div class="d-flex justify-content-between align-items-center my-3">
+        <div class="d-flex w-75">
+            <form asp-controller="CommentPosts" asp-action="Index" method="get" class="d-flex w-100 gap-2">
+                <input type="text" name="searchString" class="form-control" placeholder="Nhập nội dung hoặc tên người dùng..." style="max-width: 300px;" value="@Context.Request.Query["searchString"]" />
+                <button type="submit" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-search"></i> Tìm kiếm
+                </button>
+            </form>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-outline-success">
+                <i class="fas fa-plus"></i> Thêm bình luận
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-warning text-center">Chưa có bình luận.</div>
+    }
+    else
+    {
+        <div class="accordion" id="postsAccordion">
+            @foreach (var postGroup in Model.GroupBy(c => c.Post))
+            {
+                var post = postGroup.Key;
+                var comments = postGroup.ToList();
+                var postId = $"post-{post?.PostId}";
+
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading-@postId">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-@postId" aria-expanded="false" aria-controls="collapse-@postId">
+                            <div class="d-flex justify-content-between align-items-center w-100">
+                                <div>
+                                    <strong>@StripHtml(post?.Title)</strong>
+                                    <span class="badge bg-primary ms-2">@comments.Count bình luận</span>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="collapse-@postId" class="accordion-collapse collapse" aria-labelledby="heading-@postId" data-bs-parent="#postsAccordion">
+                        <div class="accordion-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Người dùng</th>
+                                            <th>Nội dung</th>
+                                            <th>Thời gian</th>
+                                            <th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var comment in comments)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="~/css/img/avatar.png" alt="Avatar" class="comment-avatar me-2" style="width: 32px; height: 32px;" />
+                                                        <div>
+                                                            <strong>@comment.User?.Username</strong>
+                                                            <br />
+                                                            <small class="text-muted">
+                                                                @{
+                                                                    var role = comment.User?.Role;
+                                                                    string roleText = role switch
+                                                                    {
+                                                                        "Lecturer" => "Giảng viên, CVHT",
+                                                                        "Admin" => "Nhân viên",
+                                                                        "Student" => "Sinh viên",
+                                                                        _ => "Người dùng"
+                                                                    };
+                                                                }
+                                                                @roleText
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="comment-content">
+                                                        @Html.Raw(comment.Content)
+                                                        @if (!string.IsNullOrEmpty(comment.ImageUrl))
+                                                        {
+                                                            <div class="comment-image mt-2">
+                                                                <img src="@comment.ImageUrl" alt="Ảnh bình luận" style="max-width: 100px;" />
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    @if (comment.ParentCommentId != null)
+                                                    {
+                                                        <div class="reply-info mt-1">
+                                                            <small class="text-muted">
+                                                                <i class="fas fa-reply"></i> Trả lời bình luận #@comment.ParentCommentId
+                                                            </small>
+                                                        </div>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <small>@comment.CreatedAt.ToString("HH:mm, dd/MM/yyyy")</small>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group">
+                                                        <a asp-action="Edit" asp-route-id="@comment.CommentPostId" class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <a asp-action="Details" asp-route-id="@comment.CommentPostId" class="btn btn-sm btn-outline-info">
+                                                            <i class="fas fa-info-circle"></i>
+                                                        </a>
+                                                        <a asp-action="Delete" asp-route-id="@comment.CommentPostId" class="btn btn-sm btn-outline-danger">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .comments-page {
+        padding: 20px;
+    }
+
+    .comment-avatar {
+        border-radius: 50%;
+    }
+
+    .comment-content {
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .comment-image img {
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+    }
+
+    .badge {
+        font-weight: 500;
+    }
+
+    .reply-info {
+        font-size: 0.85rem;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background-color: #e7f1ff;
+        color: #0c63e4;
+    }
+
+    .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(0,0,0,.125);
+    }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+}
+
+@functions{
+    public static string StripHtml(string input)
+    {
+        return System.Text.RegularExpressions.Regex.Replace(input ?? string.Empty, "<.*?>", string.Empty);
+    }
+}

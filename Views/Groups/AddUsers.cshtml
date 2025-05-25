@@ -1,0 +1,112 @@
+@model Do_An_Tot_Nghiep.Models.Group
+
+@{
+    ViewData["Title"] = "Thêm người dùng vào nhóm";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title mb-0">Thêm người dùng vào nhóm: @Model.GroupName</h3>
+        </div>
+        <div class="card-body">
+            <form asp-action="AddUsersToGroup" method="post">
+                <input type="hidden" name="groupId" value="@Model.GroupId" />
+                
+                <div class="form-group mb-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Thêm người dùng
+                    </button>
+                    <a href="/Groups/Details/@Model.GroupId" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAll">
+                                        <label class="form-check-label" for="selectAll">Chọn tất cả</label>
+                                    </div>
+                                </th>
+                                <th>Họ và tên</th>
+                                <th>Vai trò</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in ViewBag.UsersNotInGroup)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="form-check">
+                                            <input class="form-check-input user-checkbox" type="checkbox" name="userIds" value="@user.UserId">
+                                        </div>
+                                    </td>
+                                    <td>@user.Username</td>
+                                    <td>
+                                        @{
+                                            string roleText = "";
+                                            string roleClass = "";
+                                            switch (user.Role)
+                                            {
+                                                case "Admin":
+                                                    roleText = "Quản trị viên";
+                                                    roleClass = "badge bg-danger";
+                                                    break;
+                                                case "Lecturer":
+                                                    roleText = "Giảng viên";
+                                                    roleClass = "badge bg-primary";
+                                                    break;
+                                                case "Student":
+                                                    roleText = "Sinh viên";
+                                                    roleClass = "badge bg-success";
+                                                    break;
+                                                default:
+                                                    roleText = "Người dùng";
+                                                    roleClass = "badge bg-secondary";
+                                                    break;
+                                            }
+                                        }
+                                        <span class="@roleClass">@roleText</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Xử lý chọn/bỏ chọn tất cả
+            $('#selectAll').change(function() {
+                $('.user-checkbox').prop('checked', $(this).prop('checked'));
+            });
+
+            // Kiểm tra form trước khi submit
+            $('form').submit(function(e) {
+                if ($('.user-checkbox:checked').length === 0) {
+                    e.preventDefault();
+                    alert('Vui lòng chọn ít nhất một người dùng để thêm vào nhóm!');
+                    return false;
+                }
+            });
+
+            // Hiển thị thông báo nếu có
+            @if (TempData["Error"] != null)
+            {
+                <text>
+                toastr.error('@TempData["Error"]');
+                </text>
+            }
+        });
+    </script>
+} 

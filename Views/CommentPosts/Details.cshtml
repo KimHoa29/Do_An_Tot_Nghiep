@@ -1,0 +1,46 @@
+﻿@model Do_An_Tot_Nghiep.Models.CommentPost
+
+@{
+    ViewData["Title"] = "Chi tiết bình luận";
+}
+
+<h2 class="text-center text-navy">@ViewData["Title"]</h2>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Tài liệu</dt>
+                    <dd class="col-sm-9">@Model.Post?.Title</dd>
+
+                    <dt class="col-sm-3">Người bình luận</dt>
+                    <dd class="col-sm-9">@Model.User?.Username</dd>
+
+                    <dt class="col-sm-3">Nội dung</dt>
+                    <dd class="col-sm-9">@Html.Raw(Model.Content)</dd>
+
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <dt class="col-sm-3">Ảnh đính kèm</dt>
+                        <dd class="col-sm-9">
+                            <img src="@Model.ImageUrl" alt="Ảnh bình luận" class="img-fluid" />
+                        </dd>
+                    }
+
+                    <dt class="col-sm-3">Thời gian tạo</dt>
+                    <dd class="col-sm-9">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                </dl>
+
+                <div class="text-center mt-3">
+                    <a asp-action="Edit" asp-route-id="@Model.CommentPostId" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Sửa
+                    </a>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,64 @@
+﻿@model Do_An_Tot_Nghiep.Models.Topic
+
+@{
+    ViewData["Title"] = "Xóa chủ đề";
+}
+
+<h2 class="text-center text-danger mt-3 fw-bold animate__animated animate__fadeInDown">⚠ Xóa chủ đề</h2>
+
+<h4 class="text-center text-warning">Bạn có chắc chắn muốn xóa chủ đề này không?</h4>
+
+<div class="border p-4 rounded shadow bg-white mt-4 animate__animated animate__fadeIn">
+    <dl class="row">
+        <dt class="col-sm-3 fw-bold text-danger">Tiêu đề:</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Title)</dd>
+
+        <dt class="col-sm-3 fw-bold">Nội dung:</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Content)</dd>
+
+        <dt class="col-sm-3 fw-bold">Mức hiển thị:</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.VisibilityType)</dd>
+
+        <dt class="col-sm-3 fw-bold">Ngày tạo:</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.CreatedAt)</dd>
+
+        <dt class="col-sm-3 fw-bold">Ngày cập nhật:</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.UpdatedAt)</dd>
+
+        <!-- Hiển thị ảnh hiện tại nếu có -->
+        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <dt class="col-sm-3 fw-bold">Ảnh chủ đề:</dt>
+            <dd class="col-sm-9">
+                <img src="@Model.ImageUrl" alt="Ảnh chủ đề" style="max-height: 150px;" />
+            </dd>
+        }
+
+        <!-- Hiển thị file hiện tại nếu có -->
+        @if (!string.IsNullOrEmpty(Model.FileUrl))
+        {
+            <dt class="col-sm-3 fw-bold">Tài liệu đính kèm:</dt>
+            <dd class="col-sm-9">
+                <a href="@Model.FileUrl" target="_blank">@System.IO.Path.GetFileName(Model.FileUrl)</a>
+            </dd>
+        }
+
+        <dt class="col-sm-3 fw-bold">Người tạo:</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.User.Username)</dd>
+    </dl>
+
+    <form asp-action="Delete" class="text-center animate__animated animate__fadeInUp">
+        <input type="hidden" asp-for="TopicId" />
+
+        <button type="submit" class="btn btn-danger px-4 shadow" onclick="return confirm('⚠ Bạn có chắc chắn muốn xóa chủ đề này?')">
+            ❌ Xóa
+        </button>
+        <a asp-action="Index" class="btn btn-secondary px-4 ms-2 shadow">🔙 Quay lại danh sách</a>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

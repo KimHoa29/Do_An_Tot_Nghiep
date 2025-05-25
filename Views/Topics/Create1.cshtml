@@ -1,0 +1,143 @@
+﻿@model Do_An_Tot_Nghiep.Models.Topic
+
+@{
+    ViewData["Title"] = "Thêm chủ đề";
+}
+
+<head>
+    <link rel="stylesheet" href="~/css/form-style.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+
+<h2 class="text-center text-primary mt-3 fw-bold">Thêm chủ đề bởi: <strong> @ViewBag.Username</strong></h2>
+<hr />
+
+<div class="row justify-content-center">
+    <div class="col-md-6 form-container">
+        <form asp-action="Create" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <!-- Tiêu đề -->
+            <div class="mb-3">
+                <label asp-for="Title" class="form-label">Tiêu đề</label>
+                <input asp-for="Title" class="form-control" placeholder="Nhập tiêu đề..." />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <!-- Nội dung -->
+            <div class="mb-3">
+                <label asp-for="Content" class="form-label">Nội dung</label>
+                <textarea asp-for="Content" class="form-control" placeholder="Nhập nội dung..." rows="4"></textarea>
+                <span asp-validation-for="Content" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label>Loại hiển thị</label>
+                <select id="VisibilityType" name="VisibilityType" class="form-control">
+                    @foreach (var type in (SelectList)ViewBag.VisibilityTypes)
+                    {
+                        <option value="@type.Value">@type.Text</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group" id="groupSelect" style="display: none;">
+                <label>Chọn nhóm</label>
+                <select name="selectedGroups" class="form-control" multiple="multiple">
+                    @foreach (var group in (MultiSelectList)ViewBag.Groups)
+                    {
+                        <option value="@group.Value">@group.Text</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group" id="userSelect" style="display: none;">
+                <label>Chọn người dùng</label>
+                <select name="selectedUsers" class="form-control" multiple="multiple">
+                    @foreach (var user in (MultiSelectList)ViewBag.Users)
+                    {
+                        <option value="@user.Value">@user.Text</option>
+                    }
+                </select>
+            </div>
+
+
+            <!-- Ngày tạo -->
+            <div class="mb-3">
+                <label asp-for="CreatedAt" class="form-label">Ngày tạo</label>
+                <input asp-for="CreatedAt" class="form-control" type="datetime-local" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" readonly />
+                <span asp-validation-for="CreatedAt" class="text-danger"></span>
+            </div>
+
+            <!-- Ngày cập nhật -->
+            <div class="mb-3">
+                <label asp-for="UpdatedAt" class="form-label">Ngày cập nhật</label>
+                <input asp-for="UpdatedAt" class="form-control" type="datetime-local" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" readonly />
+                <span asp-validation-for="UpdatedAt" class="text-danger"></span>
+            </div>
+
+            <!-- Ảnh -->
+            <div class="mb-3">
+                <label asp-for="ImageUrl" class="form-label">Tải ảnh lên</label>
+                <input type="file" name="imageFile" class="form-control" />
+                <span asp-validation-for="ImageUrl" class="text-danger"></span>
+                @if (!string.IsNullOrEmpty(Model?.ImageUrl))
+                {
+                    <div class="mt-2">
+                        <img src="@Model.ImageUrl" alt="Ảnh" class="img-fluid" style="max-height: 200px;" />
+                    </div>
+                }
+            </div>
+
+            <!-- Tệp -->
+            <div class="mb-3">
+                <label asp-for="FileUrl" class="form-label">Tải tệp lên</label>
+                <input type="file" name="documentFile" class="form-control" />
+                <span asp-validation-for="FileUrl" class="text-danger"></span>
+                @if (!string.IsNullOrEmpty(Model?.FileUrl))
+                {
+                    <div class="mt-2">
+                        <a href="@Model.FileUrl" target="_blank" class="btn btn-info">Xem tệp</a>
+                    </div>
+                }
+            </div>
+            <!-- Nội dung -->
+            <div class="mb-3">
+                <label asp-for="Content" class="form-label">Nội dung</label>
+                <textarea asp-for="Content" class="form-control" placeholder="Nhập nội dung..." rows="4"></textarea>
+                <span asp-validation-for="Content" class="text-danger"></span>
+            </div>
+
+            <!-- Nút mở danh sách thẻ -->
+            <div class="form-group mb-2">
+                <button type="button" id="toggleTagList" class="btn btn-outline-primary">+ Chọn thẻ (Tag)</button>
+            </div>
+
+            <!-- Danh sách thẻ -->
+            <div class="form-group" id="tagListContainer" style="display: none;">
+                <label for="selectedTagIds">Danh sách thẻ:</label>
+                @Html.ListBox("selectedTagIds", ViewBag.Tags as MultiSelectList, new { @class = "form-control", size = "6" }) <!-- size để hiển thị nhiều thẻ hơn -->
+            </div>
+
+            <!-- Nút -->
+            <div class="text-center">
+                <button type="submit" class="btn btn-success px-4 shadow">✅ Lưu</button>
+                <a asp-action="Index" class="btn btn-secondary px-4 ms-2 shadow">🔙 Quay lại</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById("VisibilityType").addEventListener("change", function () {
+            var value = this.value;
+            document.getElementById("groupSelect").style.display = (value === "group") ? "block" : "none";
+            document.getElementById("userSelect").style.display = (value === "custom") ? "block" : "none";
+        });
+
+        // Gọi lần đầu để khởi động hiển thị đúng nếu có sẵn
+        document.getElementById("VisibilityType").dispatchEvent(new Event("change"));
+
+    </script>
+}

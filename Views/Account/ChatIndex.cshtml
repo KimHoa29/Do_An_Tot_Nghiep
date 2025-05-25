@@ -1,0 +1,18 @@
+﻿@using Do_An_Tot_Nghiep.ViewModels;
+@model ChatStatisticsViewModel;
+@{
+    ViewData["Title"] = "ChatIndex";
+}
+
+<form asp-action="ChatIndex" method="post">
+    <label>Your message:</label>
+    <input asp-for="UserMessage" class="form-control" />
+    <button type="submit" class="btn btn-primary mt-2">Send</button>
+</form>
+
+@if (!string.IsNullOrEmpty(Model.BotResponse))
+{
+    <div class="alert alert-info mt-3">
+        <strong>Bot:</strong> @Model.BotResponse
+    </div>
+}

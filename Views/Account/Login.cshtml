@@ -1,0 +1,98 @@
+﻿@model Do_An_Tot_Nghiep.Models.User
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập Hệ Thống</title>
+    <link rel="stylesheet" href="~/css/auth.css">
+    <style>
+        .input-group {
+            position: relative;
+        }
+        .toggle-password {
+            position: absolute;
+            top: 50%;
+            right: 16px;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #FFCC80;
+            font-size: 20px;
+            background: none;
+            border: none;
+            outline: none;
+            display: flex;
+            align-items: center;
+        }
+        .toggle-password svg {
+            fill: #FFCC80;
+            width: 24px;
+            height: 24px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h1 class="main-title">Hệ thống cố vấn học tập</h1>
+        <h2 class="sub-title">Đăng nhập hệ thống</h2>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                @Html.ValidationSummary(false)
+            </div>
+        }
+
+        <form asp-action="Login" asp-controller="Account" method="post">
+            <div class="input-group">
+                <input type="text" name="username" placeholder="Tên đăng nhập" required>
+            </div>
+            <div class="input-group">
+                <input type="password" name="password" id="password" placeholder="Mật khẩu" required>
+                <button type="button" class="toggle-password" onclick="togglePassword()" tabindex="-1" aria-label="Hiện mật khẩu">
+                    <span id="eyeIcon">
+                        <!-- Mặc định là mắt đóng -->
+                        <svg id="eyeOpen" viewBox="0 0 24 24" style="display:none"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5C21.27 7.61 17 4.5 12 4.5zm0 13c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm0-10a4 4 0 100 8 4 4 0 000-8z"/></svg>
+                        <svg id="eyeClosed" viewBox="0 0 24 24"><path d="M12 6.5c-3.31 0-6.15 2.01-7.5 5.5 1.35 3.49 4.19 5.5 7.5 5.5 1.13 0 2.21-.19 3.19-.54l2.11 2.11 1.41-1.41-16-16-1.41 1.41 2.11 2.11C3.19 8.69 2 10.24 1 12c1.73 4.39 6 7.5 11 7.5 2.08 0 4.05-.5 5.75-1.38l2.11 2.11 1.41-1.41-2.11-2.11C20.81 15.31 22 13.76 23 12c-1.73-4.39-6-7.5-11-7.5-.88 0-1.74.09-2.56.26l1.45 1.45C11.26 6.54 11.62 6.5 12 6.5zm-7.5 5.5c1.35-3.49 4.19-5.5 7.5-5.5.38 0 .74.04 1.11.11l1.45 1.45C13.74 7.04 13.38 7 13 7c-3.31 0-6 2.69-6 6 0 .38.04.74.11 1.11l1.45 1.45C7.04 13.74 7 13.38 7 13c0-3.31 2.69-6 6-6 .38 0 .74.04 1.11.11l1.45 1.45C13.74 7.04 13.38 7 13 7c-3.31 0-6 2.69-6 6 0 .38.04.74.11 1.11l1.45 1.45C7.04 13.74 7 13.38 7 13z"/></svg>
+                    </span>
+                </button>
+            </div>
+            <a href="#" class="forgot">Quên mật khẩu?</a>
+            <button type="submit" class="btn">Đăng nhập</button>
+            <p class="switch-auth">Chưa có tài khoản? <a asp-controller="Account" asp-action="Register">Đăng ký ngay</a></p>
+        </form>
+    </div>
+    <script>
+        // Mặc định: mắt đóng (ẩn mật khẩu)
+        document.getElementById('eyeOpen').style.display = 'none';
+        document.getElementById('eyeClosed').style.display = 'inline';
+        function togglePassword() {
+            var pwd = document.getElementById('password');
+            var eyeOpen = document.getElementById('eyeOpen');
+            var eyeClosed = document.getElementById('eyeClosed');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                eyeOpen.style.display = 'inline';
+                eyeClosed.style.display = 'none';
+            } else {
+                pwd.type = 'password';
+                eyeOpen.style.display = 'none';
+                eyeClosed.style.display = 'inline';
+            }
+        }
+    </script>
+</body>
+</html>

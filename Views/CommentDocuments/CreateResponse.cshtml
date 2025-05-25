@@ -1,0 +1,42 @@
+﻿@model Do_An_Tot_Nghiep.Models.CommentDocument
+@{
+    ViewData["Title"] = "Trả lời bình luận";
+    var parent = ViewBag.ParentComment as Do_An_Tot_Nghiep.Models.CommentDocument;
+}
+
+<h2>Trả lời bình luận</h2>
+
+<div class="card mb-3 p-3">
+    <h5>Bình luận gốc:</h5>
+    <div class="border rounded p-2 bg-light">
+        <strong>@parent?.User?.Username:</strong>
+        <p>@parent?.Content</p>
+        @if (!string.IsNullOrEmpty(parent?.ImageUrl))
+        {
+            <img src="@parent.ImageUrl" alt="Ảnh bình luận" class="img-fluid" style="max-height: 300px;" />
+        }
+    </div>
+</div>
+
+<form asp-action="CreateResponse" enctype="multipart/form-data" method="post">
+    <input type="hidden" asp-for="ParentCommentId" value="@parent?.CommentDocumentId" />
+
+    <div class="mb-3">
+        <label asp-for="Content" class="form-label">Nội dung phản hồi</label>
+        <textarea asp-for="Content" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="Content" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label for="ImageUpload" class="form-label">Ảnh (nếu có)</label>
+        <input type="file" name="ImageUpload" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Gửi phản hồi</button>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,0 +1,79 @@
+
+@model IEnumerable<Do_An_Tot_Nghiep.Models.CommentDocument>
+
+@foreach (var reply in Model)
+{
+    <div class="comment-thread">
+        <div class="comment-main comment-reply">
+            <div class="reply-line"></div>
+            <div class="d-flex">
+                <img src="~/css/img/avatar.png" alt="Avatar" class="reply-avatar" />
+                <div class="reply-content">
+                    <div class="reply-header">
+                        <strong class="reply-username">
+                            @reply.User?.Username –
+                            @{
+                                var role = reply.User?.Role;
+                                string roleText = role switch
+                                {
+                                    "Lecturer" => "Giảng viên, CVHT",
+                                    "Admin" => "Nhân viên",
+                                    "Student" => "Sinh viên",
+                                    _ => "Người dùng"
+                                };
+                            }
+                            <span class="role">@roleText</span>
+                        </strong>
+                        <div class="d-flex align-items-center">
+                            <input type="checkbox" name="selectedComments" value="@reply.CommentDocumentId" class="selectComment me-2" />
+                            <small class="reply-time">@reply.CreatedAt.ToString("HH:mm, dd/MM/yyyy")</small>
+                        </div>
+                    </div>
+                    <div class="reply-text">
+                        @Html.Raw(reply.Content)
+                        @if (!string.IsNullOrEmpty(reply.ImageUrl))
+                        {
+                            <div class="reply-image">
+                                <img src="@reply.ImageUrl" alt="Ảnh phản hồi" />
+                            </div>
+                        }
+                    </div>
+                    <div class="reply-actions">
+                        <button class="custom-reply-btn" onclick="toggleReplyForm('@reply.CommentDocumentId')">
+                            <i class="fas fa-reply"></i> Trả lời
+                        </button>
+                        <a asp-action="Edit" asp-route-id="@reply.CommentDocumentId" class="custom-reply-btn">
+                            <i class="fas fa-edit"></i> Sửa
+                        </a>
+                        <a asp-action="Details" asp-route-id="@reply.CommentDocumentId" class="custom-reply-btn">
+                            <i class="fas fa-info-circle"></i> Chi tiết
+                        </a>
+                    </div>
+
+                    <div class="reply-form mt-2" id="reply-form-@reply.CommentDocumentId" style="display: none;">
+                        <form asp-action="CreateResponse" method="post" class="nested-reply-form" enctype="multipart/form-data">
+                            <input type="hidden" name="ParentCommentId" value="@reply.CommentDocumentId" />
+                            <div class="mb-2">
+                                <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                            </div>
+                            <div class="mb-2">
+                                <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@reply.CommentDocumentId')">Hủy</button>
+                                <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (reply.Replies != null && reply.Replies.Any())
+        {
+            <div class="nested-replies">
+                @await Html.PartialAsync("_CommentReplies", reply.Replies.OrderBy(r => r.CreatedAt))
+            </div>
+        }
+    </div>
+}

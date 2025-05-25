@@ -1,0 +1,59 @@
+﻿@model Do_An_Tot_Nghiep.Models.User
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký Hệ Thống</title>
+    <link rel="stylesheet" href="~/css/auth.css">
+</head>
+<body>
+    <div class="auth-container">
+        <h1 class="main-title">Hệ thống cố vấn học tập</h1>
+        <h2 class="sub-title">Đăng ký hệ thống</h2>
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success">
+                @TempData["SuccessMessage"]
+            </div>
+        }
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger">
+                @Html.ValidationSummary(false)
+            </div>
+        }
+
+        <form asp-action="Register" asp-controller="Account" method="post">
+            <div class="input-group">
+                <input type="text" name="Username" placeholder="Tên đăng nhập" required>
+            </div>
+            <div class="input-group">
+                <input type="email" name="Email" placeholder="E-mail" required>
+            </div>
+            <div class="input-group">
+                <input type="password" name="Password" placeholder="Mật khẩu" required>
+            </div>
+
+            <!-- Dropdown chọn vai trò (không có Admin) -->
+            <div class="input-group">
+                <select name="Role" required>
+                    <option value="">Chọn vai trò</option>
+                    <option value="Student">Sinh viên</option>
+                    <option value="Lecturer">Giảng viên</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn">Đăng ký</button>
+            <p class="switch-auth">Đã có tài khoản? <a asp-action="Login" asp-controller="Account">Đăng nhập ngay</a></p>
+        </form>
+    </div>
+</body>
+</html>

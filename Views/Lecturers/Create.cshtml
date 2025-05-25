@@ -1,0 +1,104 @@
+﻿@model Do_An_Tot_Nghiep.Models.Lecturer
+
+@{
+    ViewData["Title"] = "Thêm giảng viên";
+}
+
+<head>
+    <link rel="stylesheet" href="~/css/form-style.css" />
+</head>
+
+<h2 class="text-center text-primary mt-3 fw-bold">Thêm giảng viên</h2>
+<hr />
+
+<div class="row justify-content-center">
+    <div class="col-md-6 form-container">
+        <form asp-action="Create" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <!-- Ảnh đại diện -->
+            <div class="mb-4 text-center">
+                <img id="avatarPreview" src="~/css/img/default-avatar.jpg" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;" />
+                <div class="mb-3">
+                    <label for="avatarFile" class="form-label">Ảnh đại diện</label>
+                    <input type="file" class="form-control" id="avatarFile" name="avatarFile" accept="image/*" onchange="previewImage(this);" />
+                </div>
+            </div>
+
+            <!-- Mã người dùng -->
+            <div class="mb-3">
+                <label asp-for="UserId" class="form-label">Mã giảng viên <span class="text-danger">*</span></label>
+                <input asp-for="UserId" class="form-control" placeholder="Nhập mã giảng viên..." required />
+                <span asp-validation-for="UserId" class="text-danger"></span>
+            </div>
+
+            <!-- Họ và tên -->
+            <div class="mb-3">
+                <label asp-for="FullName" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                <input asp-for="FullName" class="form-control" placeholder="Nhập họ và tên..." required />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+
+            <!-- Chức vụ -->
+            <div class="mb-3">
+                <label asp-for="Position" class="form-label">Chức vụ <span class="text-danger">*</span></label>
+                <input asp-for="Position" class="form-control" placeholder="Nhập chức vụ..." required />
+                <span asp-validation-for="Position" class="text-danger"></span>
+            </div>
+
+            <!-- Khoa -->
+            <div class="mb-3">
+                <label asp-for="Department" class="form-label">Khoa <span class="text-danger">*</span></label>
+                <input asp-for="Department" class="form-control" placeholder="Nhập khoa..." required />
+                <span asp-validation-for="Department" class="text-danger"></span>
+            </div>
+
+            <!-- Chuyên môn -->
+            <div class="mb-3">
+                <label asp-for="Specialization" class="form-label">Chuyên môn</label>
+                <input asp-for="Specialization" class="form-control" placeholder="Nhập chuyên môn..." />
+                <span asp-validation-for="Specialization" class="text-danger"></span>
+            </div>
+
+            <!-- Số điện thoại -->
+            <div class="mb-3">
+                <label asp-for="Phone" class="form-label">Số điện thoại</label>
+                <input asp-for="Phone" class="form-control" placeholder="Nhập số điện thoại..." />
+                <span asp-validation-for="Phone" class="text-danger"></span>
+            </div>
+
+            <!-- Email -->
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label">Email</label>
+                <input asp-for="Email" type="email" class="form-control" placeholder="Nhập email..." />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <!-- Ngày tạo -->
+            <div class="mb-3">
+                <label asp-for="CreatedAt" class="form-label">Ngày tạo</label>
+                <input asp-for="CreatedAt" class="form-control" type="datetime-local" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" readonly />
+                <span asp-validation-for="CreatedAt" class="text-danger"></span>
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary px-4 shadow">✅ Lưu</button>
+                <a asp-action="Index" class="btn btn-secondary px-4 ms-2 shadow">🔙 Quay lại</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#avatarPreview').attr('src', e.target.result);
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+}

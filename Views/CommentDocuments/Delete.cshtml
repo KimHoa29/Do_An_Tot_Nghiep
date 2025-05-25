@@ -1,0 +1,50 @@
+
+@model Do_An_Tot_Nghiep.Models.CommentDocument
+
+@{
+    ViewData["Title"] = "Xóa bình luận";
+}
+
+<h2 class="text-center text-navy">@ViewData["Title"]</h2>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h3 class="text-danger text-center mb-4">Bạn có chắc chắn muốn xóa bình luận này?</h3>
+
+                <dl class="row">
+                    <dt class="col-sm-3">Tài liệu</dt>
+                    <dd class="col-sm-9">@Model.Document?.Title</dd>
+
+                    <dt class="col-sm-3">Người bình luận</dt>
+                    <dd class="col-sm-9">@Model.User?.Username</dd>
+
+                    <dt class="col-sm-3">Nội dung</dt>
+                    <dd class="col-sm-9">@Html.Raw(Model.Content)</dd>
+
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <dt class="col-sm-3">Ảnh đính kèm</dt>
+                        <dd class="col-sm-9">
+                            <img src="@Model.ImageUrl" alt="Ảnh bình luận" class="img-fluid" />
+                        </dd>
+                    }
+
+                    <dt class="col-sm-3">Thời gian tạo</dt>
+                    <dd class="col-sm-9">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</dd>
+                </dl>
+
+                <form asp-action="Delete" class="text-center mt-3">
+                    <input type="hidden" asp-for="CommentDocumentId" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Xác nhận xóa
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

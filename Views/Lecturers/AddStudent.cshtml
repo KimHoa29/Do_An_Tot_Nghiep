@@ -1,0 +1,45 @@
+﻿@model Do_An_Tot_Nghiep.Models.AddStudentViewModel
+
+@* @{
+    ViewData["Title"] = "Thêm sinh viên quản lý của giảng viên @Model.FullName";
+}
+
+<h2>@ViewData["Title"]</h2> *@
+
+<h2 class="text-center text-primary">Thêm sinh viên quản lý của giảng viên @Model.FullName</h2>
+
+<form asp-action="AddStudent" method="post">
+    <input type="hidden" name="LecturerId" value="@Model.LecturerId" />
+
+    <button type="submit" class="btn btn-success mb-3">Thêm sinh viên</button>
+
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th></th> <!-- Cột cho checkbox -->
+                <th>Mã sinh viên</th>
+                <th>Họ và tên</th>
+                <th>Lớp</th>
+                <th>Ngành</th>
+                <th>Email</th>
+                <th>SĐT</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var student in Model.Students)
+        {
+            <tr>
+                <td>
+                    <input type="checkbox" name="SelectedStudentIds" value="@student.StudentId" />
+                </td>
+                <td>@student.StudentId</td>
+                <td>@student.FullName</td>
+                <td>@student.Class</td>
+                <td>@student.Major</td>
+                <td>@student.Email</td>
+                <td>@student.Phone</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</form>

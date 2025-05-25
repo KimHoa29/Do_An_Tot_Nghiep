@@ -1,0 +1,91 @@
+﻿.custom-post-container {
+    background: #f4f4f4;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 800px;
+    margin: 30px auto;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.username {
+    color: #c23aff;
+    font-size: 1.2rem;
+}
+
+.role {
+    color: #666;
+    font-size: 1rem;
+}
+
+.form-group {
+    margin-bottom: 18px;
+}
+
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #444;
+    }
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    font-size: 1rem;
+    background-color: #fff;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 25px;
+}
+
+.btn-submit {
+    background-color: #3cb371;
+    color: white;
+    border: none;
+    padding: 10px 30px;
+    font-size: 1.1rem;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-cancel {
+    background-color: #e0e0e0;
+    color: #4a4a4a;
+    padding: 10px 30px;
+    font-size: 1.1rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .custom-post-container {
+        padding: 20px;
+        width: 90%;
+    }
+
+    .form-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .btn-submit, .btn-cancel {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}

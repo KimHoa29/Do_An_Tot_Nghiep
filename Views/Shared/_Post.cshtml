@@ -1,0 +1,1015 @@
+﻿@using System.Security.Claims
+@using Do_An_Tot_Nghiep.Models
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+}
+
+@model Post
+
+@{
+    var currentUserId = Context.Session.GetString("UserId");
+    var isOwner = !string.IsNullOrEmpty(currentUserId) && Model.UserId.ToString() == currentUserId;
+
+    // Kiểm tra xem người dùng hiện tại đã like bài viết chưa
+    var isLiked = false;
+    if (!string.IsNullOrEmpty(currentUserId) && int.TryParse(currentUserId, out int currentUserIdInt))
+    {
+        isLiked = Model.LikePosts != null && Model.LikePosts.Any(lp => lp.UserId == currentUserIdInt);
+    }
+    var likeCount = Model.LikePosts?.Count ?? 0;
+
+    // Log để debug
+    System.Diagnostics.Debug.WriteLine($"Post ID: {Model.PostId}");
+    System.Diagnostics.Debug.WriteLine($"Current User ID: {currentUserId}");
+    System.Diagnostics.Debug.WriteLine($"Post User ID: {Model.UserId}");
+    System.Diagnostics.Debug.WriteLine($"Is Owner: {isOwner}");
+    System.Diagnostics.Debug.WriteLine($"Is Liked: {isLiked}");
+    System.Diagnostics.Debug.WriteLine($"Like Count: {likeCount}");
+    if (Model.LikePosts != null)
+    {
+        foreach (var like in Model.LikePosts)
+        {
+            System.Diagnostics.Debug.WriteLine($"Like by user: {like.UserId}");
+        }
+    }
+}
+
+@if (Model != null)
+{
+    <div class="document-announcement">
+        <!-- Thông tin giảng viên -->
+        <div class="author-info">
+            <img src="@(string.IsNullOrEmpty(Model.User?.Avatar) ? "/css/img/default-avatar.jpg" : Model.User.Avatar)" alt="Avatar" class="avatar" />
+            <div class="author-text">
+                <strong>@Model.User.Username</strong> –
+                <span class="role">
+                    @{
+                        var role = Model.User?.Role;
+                        string roleText = role switch
+                        {
+                            "Lecturer" => "Giảng viên, CVHT",
+                            "Admin" => "Nhân viên",
+                            "Student" => "Sinh viên",
+                            _ => "Người dùng"
+                        };
+                    }
+                    @roleText
+                </span>
+                <br />
+                @{
+                    var type = Model.VisibilityType?.ToLower();
+                    string icon = type switch
+                    {
+                        "public" => "🌍",
+                        "private" => "🔒",
+                        "group" => "👥",
+                        "custom" => "⚙️",
+                        _ => "❓"
+                    };
+                }
+                <small>
+                    Cập nhật lúc @Model.UpdatedAt?.ToString("HH:mm, dd/MM/yyyy")
+                    <span class="ms-2">@icon</span>
+                </small>
+            </div>
+            <div class="post-actions">
+                <button type="button" class="three-dots-btn" onclick="event.stopPropagation(); togglePostMenu('@Model.PostId')">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+                @if (Model.UserId.ToString() == ViewBag.currentUserID)
+                {
+
+                    <div class="post-menu" id="post-menu-@Model.PostId">
+                        <a href="@Url.Action("Edit", "Posts", new { id = Model.PostId })" class="menu-item">
+                            <i class="fas fa-edit"></i> Chỉnh sửa
+                        </a>
+                        <a href="javascript:void(0);" onclick="showDeletePostModal('@Model.PostId')" class="menu-item delete">
+                            <i class="fas fa-trash"></i> Xóa
+                        </a>
+                    </div>
+                }
+                </div>
+        </div>
+
+        <!-- Tiêu đề -->
+        <h2 class="title">@Html.Raw(Model.Title)</h2>
+
+        <!-- Nội dung -->
+        <p class="title" style="font-size: 16px; color: #555;">@Html.Raw(Model.Content)</p>
+
+        <!-- Người được tag -->
+        @if (Model.PostMentions != null && Model.PostMentions.Any())
+        {
+            <div class="mentioned-users mt-3">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <i class="fas fa-user-tag tag-icon"></i>
+                    @foreach (var mention in Model.PostMentions)
+                    {
+                        <span class="badge bg-light-purple">
+                            @mention.User?.Username –
+                            @{
+                                var mentionRole = mention.User?.Role;
+                                string mentionRoleText = mentionRole switch
+                                {
+                                    "Lecturer" => "Giảng viên, CVHT",
+                                    "Admin" => "Nhân viên",
+                                    "Student" => "Sinh viên",
+                                    _ => "Người dùng"
+                                };
+                            }
+                            <span class="mention-role">@mentionRoleText</span>
+                        </span>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- File đính kèm -->
+        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <div class="timetable-image">
+                <img src="@Url.Content(Model.ImageUrl)" alt="Ảnh đính kèm" />
+            </div>
+        }
+
+        <!-- File đính kèm -->
+        @if (!string.IsNullOrEmpty(Model.FileUrl))
+        {
+            <div class="attachment">
+                <a href="@Model.FileUrl" target="_blank" class="attachment-link">
+                    <i class="fas fa-file-pdf attachment-icon"></i>
+                    <span class="attachment-name">@System.IO.Path.GetFileName(Model.FileUrl)</span>
+                </a>
+            </div>
+        }
+        <!-- Nút phản hồi -->
+        <div class="actions mt-3">
+            <button class="action-btn like-btn @(isLiked ? "liked" : "")" onclick="toggleLike('@Model.PostId')" data-post-id="@Model.PostId">
+                <i class="fas fa-heart"></i>
+                <span class="count-number">@likeCount</span>
+            </button>
+            <button class="action-btn comment-btn" type="button" onclick="toggleCommentBlock('@Model.PostId')">
+                <i class="fas fa-comment"></i>
+                <span class="count-number">@(Model.CommentPosts?.Count ?? 0)</span>
+            </button>
+        </div>
+
+        <!-- Khối comment -->
+        <div class="comment-block mt-3" id="comment-block-@Model.PostId" style="display: none;">
+            <!-- Form bình luận chính -->
+            <div class="comment-form">
+                <form id="commentForm-@Model.PostId" class="comment-form" onsubmit="submitPostComment(event, @Model.PostId)">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="PostId" value="@Model.PostId" />
+                    <div class="mb-2">
+                        <textarea name="Content" class="form-control" placeholder="Viết bình luận..." rows="3" required></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                    </div>
+                    <button type="submit" class="btn btn-purple">Gửi bình luận</button>
+                </form>
+            </div>
+
+            <!-- Danh sách bình luận -->
+            @if (Model.CommentPosts != null && Model.CommentPosts.Any())
+            {
+                <div class="comments-list mb-3" id="comments-list-@Model.PostId">
+                    @foreach (var comment in Model.CommentPosts.Where(c => c.ParentCommentId == null).OrderByDescending(c => c.CreatedAt))
+                    {
+                        <div class="comment-item d-flex mb-3" id="comment-@comment.CommentPostId">
+                            <img src="@(string.IsNullOrEmpty(comment.User?.Avatar) ? "/css/img/default-avatar.jpg" : comment.User.Avatar)" alt="Avatar" class="comment-avatar me-2" />
+                            <div class="comment-body">
+                                <div class="comment-header d-flex justify-content-between">
+                                    <div>
+                                        <strong class="text-primary">
+                                            @comment.User?.Username –
+                                            @{
+                                                var r = comment.User?.Role;
+                                                string roleDisplayText = r switch
+                                                {
+                                                    "Lecturer" => "Giảng viên, CVHT",
+                                                    "Admin" => "Nhân viên",
+                                                    "Student" => "Sinh viên",
+                                                    _ => "Người dùng"
+                                                };
+                                            }
+                                            <span class="role">@roleDisplayText</span>
+                                        </strong>
+                                    </div>
+                                    <small class="text-muted">@comment.CreatedAt.ToString("HH:mm, dd/MM/yyyy")</small>
+                                </div>
+                                <div class="comment-content">
+                                    @Html.Raw(comment.Content)
+                                    @if (!string.IsNullOrEmpty(comment.ImageUrl))
+                                    {
+                                        <div class="comment-image">
+                                            <img src="@comment.ImageUrl" alt="Ảnh bình luận" />
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="comment-actions">
+                                    <button class="custom-reply-btn" onclick="toggleReplyForm('@comment.CommentPostId')">
+                                        <i class="fas fa-reply"></i> Trả lời
+                                    </button>
+                                </div>
+
+                                <!-- Form bình luận trả lời -->
+                                <div class="reply-form mt-2" id="reply-form-@comment.CommentPostId" style="display: none;">
+                                    <form class="nested-reply-form" onsubmit="submitPostReply(event, @comment.CommentPostId)" enctype="multipart/form-data">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="ParentCommentId" value="@comment.CommentPostId" />
+                                        <input type="hidden" name="PostId" value="@Model.PostId" />
+                                        <div class="mb-2">
+                                            <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                                        </div>
+                                        <div class="mb-2">
+                                            <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                                        </div>
+                                        <div class="d-flex justify-content-end">
+                                            <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@comment.CommentPostId')">Hủy</button>
+                                            <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Phần replies -->
+                                <div class="nested-replies" id="replies-@comment.CommentPostId">
+                                    @if (comment.Replies != null && comment.Replies.Any())
+                                    {
+                                        @foreach (var reply in comment.Replies.OrderBy(r => r.CreatedAt))
+                                        {
+                                            <div class="reply-item" id="reply-@reply.CommentPostId">
+                                                <div class="reply-line"></div>
+                                                <div class="d-flex">
+                                                    <img src="@(string.IsNullOrEmpty(reply.User?.Avatar) ? "/css/img/default-avatar.jpg" : reply.User.Avatar)" alt="Avatar" class="reply-avatar" />
+                                                    <div class="reply-content">
+                                                        <div class="reply-header">
+                                                            <strong class="reply-username">
+                                                                @reply.User?.Username –
+                                                                @{
+                                                                    var replyRole = reply.User?.Role;
+                                                                    string replyRoleText = replyRole switch
+                                                                    {
+                                                                        "Lecturer" => "Giảng viên, CVHT",
+                                                                        "Admin" => "Nhân viên",
+                                                                        "Student" => "Sinh viên",
+                                                                        _ => "Người dùng"
+                                                                    };
+                                                                }
+                                                                <span class="role">@replyRoleText</span>
+                                                            </strong>
+                                                            <small class="reply-time">@reply.CreatedAt.ToString("HH:mm, dd/MM/yyyy")</small>
+                                                        </div>
+                                                        <div class="reply-text">
+                                                            @Html.Raw(reply.Content)
+                                                            @if (!string.IsNullOrEmpty(reply.ImageUrl))
+                                                            {
+                                                                <div class="reply-image">
+                                                                    <img src="@reply.ImageUrl" alt="Ảnh phản hồi" />
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                        <div class="reply-actions">
+                                                            <button class="custom-reply-btn" onclick="toggleReplyForm('@reply.CommentPostId')">
+                                                                <i class="fas fa-reply"></i> Trả lời
+                                                            </button>
+                                                        </div>
+
+                                                        <!-- Form trả lời cho reply -->
+                                                        <div class="reply-form mt-2" id="reply-form-@reply.CommentPostId" style="display: none;">
+                                                            <form class="nested-reply-form" onsubmit="submitPostReply(event, @reply.CommentPostId)" enctype="multipart/form-data">
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="ParentCommentId" value="@reply.CommentPostId" />
+                                                                <input type="hidden" name="PostId" value="@Model.PostId" />
+                                                                <div class="mb-2">
+                                                                    <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                                                                </div>
+                                                                <div class="mb-2">
+                                                                    <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                                                                </div>
+                                                                <div class="d-flex justify-content-end">
+                                                                    <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@reply.CommentPostId')">Hủy</button>
+                                                                    <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                        <div class="nested-replies" id="replies-@reply.CommentPostId"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- Modal xác nhận xóa -->
+<div class="modal fade" id="deletePostModal" tabindex="-1" aria-labelledby="deletePostModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deletePostModalLabel">Xác nhận xóa bài viết</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc chắn muốn xóa bài viết này không?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmDeletePostBtn">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var postIdToDelete = null;
+
+function toggleCommentBlock(postId) {
+    const block = document.getElementById(`comment-block-${postId}`);
+    const wasHidden = block.style.display === 'none';
+    block.style.display = wasHidden ? 'block' : 'none';
+
+    if (wasHidden) {
+        const textarea = block.querySelector('textarea');
+        if (textarea) textarea.focus();
+    }
+}
+
+function toggleReplyForm(commentId) {
+    var form = document.getElementById('reply-form-' + commentId);
+    if (form) {
+        form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
+        if (form.style.display === 'block') {
+            var textarea = form.querySelector('textarea');
+            if (textarea) textarea.focus();
+        }
+    }
+}
+
+function togglePostMenu(postId) {
+    event.stopPropagation();
+    const menu = document.getElementById(`post-menu-${postId}`);
+    if (!menu) return;
+
+    const isVisible = menu.classList.contains('show');
+    
+    // Hide all menus first
+    document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(m => {
+            m.classList.remove('show');
+    });
+    
+    // Show this menu if it wasn't visible
+    if (!isVisible) {
+        menu.classList.add('show');
+    }
+}
+
+function showDeletePostModal(postId) {
+    postIdToDelete = postId;
+    var modal = new bootstrap.Modal(document.getElementById('deletePostModal'));
+    modal.show();
+}
+
+var confirmDeleteBtn = document.getElementById('confirmDeletePostBtn');
+if (confirmDeleteBtn) {
+    confirmDeleteBtn.onclick = function() {
+        if (postIdToDelete) {
+            fetch(`/Posts/Delete/${postIdToDelete}`, {
+                method: 'POST',
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                }
+            })
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    window.location.reload();
+                }
+            });
+        }
+    };
+}
+
+// Close menus when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.post-actions') && 
+        !event.target.closest('.document-actions') && 
+        !event.target.closest('.topic-actions')) {
+        document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+});
+
+// Prevent menu from closing when clicking inside
+document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(menu => {
+    menu.addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
+});
+
+function toggleLike(postId) {
+    const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
+    const likeCountSpan = likeBtn.querySelector('.count-number');
+    
+    fetch(`/Posts/ToggleLike/${postId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Cập nhật UI dựa trên phản hồi từ server
+            if (data.isLiked) {
+                likeBtn.classList.add('liked');
+            } else {
+                likeBtn.classList.remove('liked');
+            }
+            likeCountSpan.textContent = data.likeCount;
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi thực hiện thao tác. Vui lòng thử lại sau.');
+    });
+}
+
+function getPostRoleText(role) {
+    switch (role) {
+        case 'Lecturer': return 'Giảng viên, CVHT';
+        case 'Admin': return 'Nhân viên';
+        case 'Student': return 'Sinh viên';
+        default: return 'Người dùng';
+    }
+}
+
+function createPostCommentElement(comment, postId) {
+    return `
+        <div class="comment-item d-flex mb-3" id="comment-${comment.id}">
+            <img src="${comment.avatar}" alt="Avatar" class="comment-avatar me-2" />
+            <div class="comment-body">
+                <div class="comment-header d-flex justify-content-between">
+                    <div>
+                        <strong class="text-primary">
+                            ${comment.username} –
+                            <span class="role">${getPostRoleText(comment.role)}</span>
+                        </strong>
+                    </div>
+                    <small class="text-muted">${comment.createdAt}</small>
+                </div>
+                <div class="comment-content">
+                    ${comment.content}
+                    ${comment.imageUrl ? `<div class="comment-image"><img src="${comment.imageUrl}" alt="Ảnh bình luận" /></div>` : ''}
+                </div>
+                <div class="comment-actions">
+                    <button class="custom-reply-btn" onclick="toggleReplyForm('${comment.id}')">
+                        <i class="fas fa-reply"></i> Trả lời
+                    </button>
+                </div>
+                <div class="reply-form mt-2" id="reply-form-${comment.id}" style="display: none;">
+                    <form class="nested-reply-form" onsubmit="submitPostReply(event, ${comment.id})" enctype="multipart/form-data">
+                        <input type="hidden" name="ParentCommentId" value="${comment.id}" />
+                        <input type="hidden" name="PostId" value="${postId}" />
+                        <input type="hidden" name="__RequestVerificationToken" value="${document.querySelector('input[name=__RequestVerificationToken]')?.value || ''}" />
+                        <div class="mb-2">
+                            <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                        </div>
+                        <div class="mb-2">
+                            <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('${comment.id}')">Hủy</button>
+                            <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="nested-replies" id="replies-${comment.id}"></div>
+            </div>
+        </div>
+    `;
+}
+
+function createPostReplyElement(reply, postId, level = 1) {
+    const globalToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+    const levelClass = level === 1 ? 'reply-level-1' : 'reply-level-2';
+    return `
+        <div class="reply-item ${levelClass}" id="reply-${reply.id}">
+            <div class="reply-line"></div>
+            <div class="d-flex">
+                <img src="${reply.avatar}" alt="Avatar" class="reply-avatar" />
+                <div class="reply-content">
+                    <div class="reply-header">
+                        <strong class="reply-username">
+                            ${reply.username} –
+                            <span class="role">${getPostRoleText(reply.role)}</span>
+                        </strong>
+                        <small class="reply-time">${reply.createdAt}</small>
+                    </div>
+                    <div class="reply-text">
+                        ${reply.content}
+                        ${reply.imageUrl ? `<div class="reply-image"><img src="${reply.imageUrl}" alt="Ảnh phản hồi" /></div>` : ''}
+                    </div>
+                    <div class="reply-actions">
+                        <button class="custom-reply-btn" onclick="toggleReplyForm('${reply.id}')">
+                            <i class="fas fa-reply"></i> Trả lời
+                        </button>
+                    </div>
+                    <div class="reply-form mt-2" id="reply-form-${reply.id}" style="display: none;">
+                        <form class="nested-reply-form" onsubmit="submitPostReply(event, ${reply.id})" enctype="multipart/form-data">
+                            <input type="hidden" name="ParentCommentId" value="${reply.id}" />
+                            <input type="hidden" name="PostId" value="${postId}" />
+                            <input type="hidden" name="__RequestVerificationToken" value="${globalToken}" />
+                            <div class="mb-2">
+                                <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                            </div>
+                            <div class="mb-2">
+                                <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('${reply.id}')">Hủy</button>
+                                <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="nested-replies" id="replies-${reply.id}"></div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function submitPostComment(event, postId) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+    const token = tokenInput ? tokenInput.value : '';
+    try {
+        const response = await fetch('/CommentPosts/Create', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'RequestVerificationToken': token
+            }
+        });
+        const result = await response.json();
+        if (result.success) {
+            const commentsList = document.getElementById('comments-list-' + postId);
+            if (commentsList) {
+                commentsList.insertAdjacentHTML('afterbegin', createPostCommentElement(result.comment, postId));
+            }
+            form.reset();
+        } else {
+            alert(result.message || 'Có lỗi xảy ra khi thêm bình luận');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi thêm bình luận');
+    }
+}
+
+async function submitPostReply(event, parentCommentId) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const postId = form.querySelector('input[name="PostId"]').value;
+    const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+    const token = tokenInput ? tokenInput.value : '';
+    try {
+        const response = await fetch('/CommentPosts/CreateResponse', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'RequestVerificationToken': token
+            }
+        });
+        const result = await response.json();
+        if (result.success) {
+            let repliesContainer = document.getElementById('replies-' + parentCommentId);
+            if (!repliesContainer) {
+                const parentElement = document.getElementById('reply-' + parentCommentId) || document.getElementById('comment-' + parentCommentId);
+                if (parentElement) {
+                    const replyContent = parentElement.querySelector('.reply-content') || parentElement.querySelector('.comment-body');
+                    if (replyContent) {
+                        repliesContainer = document.createElement('div');
+                        repliesContainer.className = 'nested-replies';
+                        repliesContainer.id = 'replies-' + parentCommentId;
+                        replyContent.appendChild(repliesContainer);
+                    }
+                }
+            }
+            // Xác định cấp độ reply
+            let level = 1;
+            const parentReply = document.getElementById('reply-' + parentCommentId);
+            if (parentReply) {
+                level = 2;
+            }
+            if (repliesContainer) {
+                repliesContainer.insertAdjacentHTML('beforeend', createPostReplyElement(result.reply, postId, level));
+            }
+            form.reset();
+            toggleReplyForm(parentCommentId);
+        } else {
+            alert(result.message || 'Có lỗi xảy ra khi thêm phản hồi');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Có lỗi xảy ra khi thêm phản hồi');
+    }
+}
+</script>
+
+<style>
+    .document-announcement {
+        border: 1px solid #eee;
+        padding: 20px;
+        border-radius: 12px;
+        background-color: #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .author-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .avatar {
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        margin-right: 15px;
+        border: 2px solid #f0f0f0;
+    }
+
+    .author-text {
+        font-size: 0.95rem;
+        color: #333;
+    }
+
+    .role {
+        color: #c300c3;
+        font-weight: 600;
+    }
+
+    .title {
+        font-size: 20px;
+        color: #2c3e50;
+        margin-bottom: 5px;
+    }
+
+    .custom-reply-btn {
+        font-size: 0.85rem;
+        color: #800080;
+        padding: 4px 10px;
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+    }
+
+        .custom-reply-btn:hover {
+            text-decoration: underline;
+            color: #a000a0;
+        }
+
+    .attachment {
+        margin-top: 15px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .attachment-icon {
+        color: #dc3545;
+        font-size: 20px;
+    }
+
+    .attachment-name {
+        color: #0d6efd;
+        text-decoration: none;
+    }
+
+        .attachment-name:hover {
+            text-decoration: underline;
+        }
+
+    .comment-item {
+        display: flex;
+        margin-bottom: 12px;
+        align-items: flex-start;
+    }
+
+    .comment-body {
+        flex: 1;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .comment-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        margin-right: 15px;
+    }
+
+    .comment-content {
+        margin: 8px 0;
+        font-size: 0.95rem;
+        color: #333;
+        padding: 8px 12px;
+        background-color: #fff;
+        border-radius: 12px;
+    }
+
+    .reply-form textarea {
+        width: 100%;
+        border-radius: 8px;
+        padding: 8px;
+        font-size: 0.9rem;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+    }
+
+    .actions {
+        display: flex;
+        gap: 15px;
+        padding: 8px 0;
+        border-top: 1px solid #eee;
+        margin-top: 15px;
+    }
+
+    .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border: none;
+        background: transparent;
+        border-radius: 20px;
+        color: #65676b;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .action-btn:hover {
+        background-color: #f0f2f5;
+    }
+
+    .action-btn i {
+        font-size: 18px;
+    }
+
+    .like-btn.liked {
+        color: #e0245e;
+    }
+
+    .like-btn.liked i {
+        animation: likeAnimation 0.3s ease;
+    }
+
+    .comment-btn:hover {
+        color: #1877f2;
+    }
+
+    .count-number {
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    @@keyframes likeAnimation {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+        }
+
+    .nested-replies {
+        margin-left: 45px;
+        position: relative;
+        padding-left: 2px;
+    }
+
+    .nested-reply-form {
+        margin-top: 8px;
+        background-color: #f0f2f5;
+        padding: 8px 12px;
+        border-radius: 8px;
+    }
+
+        .nested-reply-form textarea {
+            background-color: #fff;
+            border: 1px solid #ccd0d5;
+            border-radius: 6px;
+            padding: 8px 12px;
+        }
+
+    .comment-image img,
+    .reply-image img {
+        max-width: 300px;
+        border-radius: 8px;
+        margin-top: 8px;
+        border: 1px solid #dadde1;
+    }
+
+    .role {
+        color: #65676b;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .reply-time, .text-muted {
+        color: #65676b !important;
+        font-size: 0.85rem;
+    }
+
+    .reply-header strong, .comment-header strong {
+        font-size: 0.95rem;
+        color: #050505;
+    }
+
+    .reply-item {
+        position: relative;
+        margin-top: 12px;
+        padding-left: 16px;
+    }
+
+    .reply-line {
+        position: absolute;
+        left: -20px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #e0e0e0;
+    }
+
+        .reply-line:before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 20px;
+            width: 16px;
+            height: 2px;
+            background-color: #e0e0e0;
+        }
+
+    .reply-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+
+    .reply-content {
+        flex: 1;
+        background-color: #fff;
+        padding: 12px;
+        border-radius: 12px;
+        position: relative;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .reply-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+    .reply-text {
+        margin: 8px 0;
+        font-size: 0.95rem;
+        color: #333;
+        padding: 8px 12px;
+        background-color: #fff;
+        border-radius: 12px;
+    }
+
+    .post-actions {
+        position: relative;
+        margin-left: auto;
+        z-index: 1000;
+    }
+
+    .three-dots-btn {
+        background: none;
+        border: none;
+        color: #65676b;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+        font-size: 20px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+    }
+
+    .three-dots-btn:hover {
+        background-color: #f0f2f5;
+    }
+
+    .post-menu {
+        position: absolute;
+        right: 0;
+        top: 100%;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        padding: 8px 0;
+        min-width: 160px;
+        display: none;
+        z-index: 1001;
+    }
+
+    .post-menu.show {
+        display: block !important;
+    }
+
+    .menu-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        color: #050505;
+        text-decoration: none;
+        transition: background-color 0.2s;
+        font-size: 14px;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .menu-item i {
+        width: 16px;
+    }
+
+    .menu-item:hover {
+        background-color: #f0f2f5;
+        text-decoration: none;
+    }
+
+    .menu-item.delete {
+        color: #dc3545;
+    }
+
+    .menu-item.delete:hover {
+        background-color: #ffebee;
+        color: #dc3545;
+        text-decoration: none;
+    }
+
+    .mentioned-users {
+        padding: 8px 0;
+        border-radius: 8px;
+        margin: 10px 0;
+    }
+
+    .tag-icon {
+        color: #9c27b0;
+        font-size: 1rem;
+    }
+
+    .bg-light-purple {
+        background-color: #ce93d8 !important;
+    }
+
+    .mentioned-users .badge {
+        font-size: 0.9rem;
+        padding: 6px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .mention-role {
+        opacity: 0.9;
+        font-size: 0.85rem;
+    }
+</style>

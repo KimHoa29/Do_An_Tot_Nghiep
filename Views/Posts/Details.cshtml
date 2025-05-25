@@ -1,0 +1,386 @@
+﻿@using System.Web
+@model Do_An_Tot_Nghiep.Models.Post
+
+@{
+    ViewData["Title"] = "Chi tiết bài viết";
+}
+
+<div class="container mt-4">
+    <div class="post-details">
+        <!-- Thông tin người đăng -->
+        <div class="author-info mb-3">
+            <img src="@(string.IsNullOrEmpty(Model.User?.Avatar) ? "/css/img/default-avatar.jpg" : Model.User.Avatar)" 
+                 alt="Avatar" class="avatar" />
+            <div class="author-text">
+                <strong>@Model.User.Username</strong> –
+                <span class="role">
+                    @{
+                        var role = Model.User?.Role;
+                        string roleText = role switch
+                        {
+                            "Lecturer" => "Giảng viên, CVHT",
+                            "Admin" => "Nhân viên",
+                            "Student" => "Sinh viên",
+                            _ => "Người dùng"
+                        };
+                    }
+                    @roleText
+                </span>
+                <br />
+                <small>
+                    Đăng lúc @string.Format("{0:HH:mm, dd/MM/yyyy}", Model.CreatedAt)
+                    @if (Model.UpdatedAt.HasValue && Model.UpdatedAt.Value > Model.CreatedAt)
+                    {
+                        <span class="text-muted">(Đã chỉnh sửa @string.Format("{0:HH:mm, dd/MM/yyyy}", Model.UpdatedAt.Value))</span>
+                    }
+                </small>
+            </div>
+        </div>
+
+        <!-- Tiêu đề và nội dung -->
+        <h2 class="post-title">@Html.Raw(HttpUtility.HtmlDecode(Model.Title))</h2>
+        <div class="post-content">
+            @Html.Raw(HttpUtility.HtmlDecode(Model.Content))
+        </div>
+
+        @if (Model.PostMentions != null && Model.PostMentions.Any())
+        {
+            <div class="mentioned-users mt-3">
+                <h6>Người được tag:</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var mention in Model.PostMentions)
+                    {
+                        <span class="badge bg-info">
+                            <i class="fas fa-at"></i> @mention.User?.Username
+                        </span>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Ảnh đính kèm -->
+        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <div class="post-image mt-3">
+                <img src="@Model.ImageUrl" alt="Ảnh bài viết" class="img-fluid" />
+            </div>
+        }
+
+        <!-- File đính kèm -->
+        @if (!string.IsNullOrEmpty(Model.FileUrl))
+        {
+            <div class="post-attachment mt-3">
+                <a href="@Model.FileUrl" target="_blank" class="btn btn-outline-primary">
+                    <i class="fas fa-file-download"></i> Tải file đính kèm
+                </a>
+            </div>
+        }
+
+        <!-- Thông tin quyền truy cập -->
+        <div class="post-visibility mt-3">
+            @{
+                var type = Model.VisibilityType?.ToLower();
+                string icon = type switch
+                {
+                    "public" => "🌍 Công khai",
+                    "private" => "🔒 Riêng tư",
+                    "group" => "👥 Nhóm",
+                    "custom" => "⚙️ Tùy chọn",
+                    _ => "❓ Không xác định"
+                };
+            }
+            <span class="badge bg-secondary">@icon</span>
+        </div>
+
+        <!-- Nút like và comment -->
+        <div class="post-actions mt-3">
+            <button class="like-btn @(ViewBag.IsLiked ? "liked" : "")" onclick="togglePostLike('@Model.PostId')" data-post-id="@Model.PostId">
+                <i class="fas fa-heart"></i>
+                <span class="like-count">@ViewBag.LikeCount</span>
+            </button>
+            <button class="comment-toggle" type="button" onclick="toggleCommentBlock('@Model.PostId')">
+                <i class="fas fa-comment"></i> Bình luận
+            </button>
+        </div>
+
+        <!-- Khối comment -->
+        <div class="comment-block mt-3" id="comment-block-@Model.PostId" style="display: none;">
+            <!-- Form bình luận -->
+            <div class="comment-form">
+                <form asp-action="Create" asp-controller="CommentPosts" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="PostId" value="@Model.PostId" />
+                    <div class="mb-2">
+                        <textarea name="Content" class="form-control" placeholder="Viết bình luận..." rows="3" required></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                        <div class="image-preview"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Gửi bình luận</button>
+                </form>
+            </div>
+
+            <!-- Danh sách bình luận -->
+            @if (Model.CommentPosts != null && Model.CommentPosts.Any())
+            {
+                <div class="comments-list mt-3">
+                    @foreach (var comment in Model.CommentPosts.Where(c => c.ParentComment== null).OrderByDescending(c => c.CreatedAt))
+                    {
+                        <div class="comment-item" id="comment-@comment.CommentPostId">
+                            <div class="comment-header">
+                                <img src="@(string.IsNullOrEmpty(comment.User?.Avatar) ? "/css/img/default-avatar.jpg" : comment.User.Avatar)" 
+                                     alt="Avatar" class="comment-avatar" />
+                                <div class="comment-info">
+                                    <strong>@comment.User.Username</strong>
+                                    <small class="text-muted">@string.Format("{0:HH:mm, dd/MM/yyyy}", comment.CreatedAt)</small>
+                                </div>
+                            </div>
+                            <div class="comment-content">
+                                @Html.Raw(comment.Content)
+                                @if (!string.IsNullOrEmpty(comment.ImageUrl))
+                                {
+                                    <div class="comment-image">
+                                        <img src="@comment.ImageUrl" alt="Ảnh bình luận" />
+                                    </div>
+                                }
+                            </div>
+                            <div class="comment-actions">
+                                <button class="reply-btn" onclick="toggleReplyForm('@comment.CommentPostId')">
+                                    <i class="fas fa-reply"></i> Trả lời
+                                </button>
+                            </div>
+
+                            <!-- Form trả lời -->
+                            <div class="reply-form" id="reply-form-@comment.CommentPostId" style="display: none;">
+                                <form asp-action="CreateResponse" asp-controller="CommentPosts" method="post" enctype="multipart/form-data">
+                                    <input type="hidden" name="ParentCommentPostId" value="@comment.CommentPostId" />
+                                    <div class="mb-2">
+                                        <textarea name="Content" class="form-control" placeholder="Viết phản hồi..." rows="2" required></textarea>
+                                    </div>
+                                    <div class="mb-2">
+                                        <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                                        <div class="image-preview"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-end">
+                                        <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@comment.CommentPostId')">Hủy</button>
+                                        <button type="submit" class="btn btn-primary">Gửi phản hồi</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Danh sách phản hồi -->
+                            @if (comment.Replies != null && comment.Replies.Any())
+                            {
+                                <div class="replies-list">
+                                    @foreach (var reply in comment.Replies.OrderBy(r => r.CreatedAt))
+                                    {
+                                        <div class="reply-item" id="comment-@reply.CommentPostId">
+                                            <div class="reply-header">
+                                                <img src="@(string.IsNullOrEmpty(reply.User?.Avatar) ? "/css/img/default-avatar.jpg" : reply.User.Avatar)" 
+                                                     alt="Avatar" class="reply-avatar" />
+                                                <div class="reply-info">
+                                                    <strong>@reply.User.Username</strong>
+                                                    <small class="text-muted">@string.Format("{0:HH:mm, dd/MM/yyyy}", reply.CreatedAt)</small>
+                                                </div>
+                                            </div>
+                                            <div class="reply-content">
+                                                @Html.Raw(reply.Content)
+                                                @if (!string.IsNullOrEmpty(reply.ImageUrl))
+                                                {
+                                                    <div class="reply-image">
+                                                        <img src="@reply.ImageUrl" alt="Ảnh phản hồi" />
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleCommentBlock(postId) {
+            const block = document.getElementById(`comment-block-${postId}`);
+            block.style.display = block.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleReplyForm(commentId) {
+            const form = document.getElementById(`reply-form-${commentId}`);
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function togglePostLike(postId) {
+            const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
+            const likeCountSpan = likeBtn.querySelector('.like-count');
+            
+            fetch(`/Posts/ToggleLike/${postId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.isLiked) {
+                        likeBtn.classList.add('liked');
+                    } else {
+                        likeBtn.classList.remove('liked');
+                    }
+                    likeCountSpan.textContent = data.likeCount;
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi thực hiện thao tác. Vui lòng thử lại sau.');
+            });
+        }
+    </script>
+}
+
+<style>
+    .post-details {
+        background-color: #fff;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .author-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-right: 15px;
+    }
+
+    .post-title {
+        font-size: 24px;
+        margin-bottom: 15px;
+        color: #1a1a1a;
+    }
+
+    .post-content {
+        font-size: 16px;
+        line-height: 1.6;
+        color: #333;
+        margin-bottom: 20px;
+    }
+
+    .post-image img {
+        max-width: 100%;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .post-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+
+    .like-btn, .comment-toggle {
+        background: none;
+        border: none;
+        color: #65676b;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 14px;
+        padding: 5px 10px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    .like-btn:hover, .comment-toggle:hover {
+        background-color: #f0f2f5;
+    }
+
+    .like-btn.liked {
+        color: #ff0000;
+    }
+
+    .comment-item {
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .comment-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .comment-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+
+    .comment-content {
+        margin: 10px 0;
+        padding: 10px;
+        background-color: #fff;
+        border-radius: 8px;
+    }
+
+    .comment-image img {
+        max-width: 200px;
+        border-radius: 4px;
+        margin-top: 10px;
+    }
+
+    .reply-form {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f0f2f5;
+        border-radius: 8px;
+    }
+
+    .replies-list {
+        margin-left: 50px;
+        margin-top: 10px;
+    }
+
+    .reply-item {
+        margin-bottom: 10px;
+        padding: 10px;
+        background-color: #fff;
+        border-radius: 8px;
+        border: 1px solid #eee;
+    }
+
+    .reply-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+
+    .image-preview img {
+        max-width: 200px;
+        margin-top: 10px;
+        border-radius: 4px;
+    }
+</style>

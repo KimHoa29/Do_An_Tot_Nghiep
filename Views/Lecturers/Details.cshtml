@@ -1,0 +1,184 @@
+﻿@model Do_An_Tot_Nghiep.Models.Lecturer
+
+@{
+    ViewData["Title"] = "Thông tin giảng viên";
+}
+
+<div class="container-fluid mt-4">
+    <div class="card shadow-lg rounded-4">
+        <div class="card-header py-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-user-tie me-2"></i>Thông tin giảng viên
+                </h3>
+                <div>
+                    <a href="@Url.Action("Edit", new { id = Model.LecturerId })" class="btn btn-light btn-sm">
+                        <i class="fas fa-edit"></i> Chỉnh sửa
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body p-4">
+            <div class="row mb-4">
+                <div class="col-md-3 text-center">
+                    <img src="@Model.User.Avatar" alt="Avatar" class="rounded-circle mb-3" style="width: 200px; height: 200px; object-fit: cover;" />
+                    <h4 class="text-primary">@Model.FullName</h4>
+                    <p class="text-muted mb-3">Mã giảng viên: @Model.UserId</p>
+                </div>
+
+                <div class="col-md-9">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-info-circle me-2"></i>Thông tin chi tiết
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td style="width: 150px;" class="text-muted">
+                                                <i class="fas fa-user-tie me-2"></i>Chức vụ:
+                                            </td>
+                                            <td class="fw-bold">@Model.Position</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">
+                                                <i class="fas fa-building me-2"></i>Khoa:
+                                            </td>
+                                            <td>@Model.Department</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">
+                                                <i class="fas fa-graduation-cap me-2"></i>Chuyên môn:
+                                            </td>
+                                            <td>@Model.Specialization</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td class="text-muted" style="width: 150px;">
+                                                <i class="fas fa-envelope me-2"></i>Email:
+                                            </td>
+                                            <td>@Model.Email</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">
+                                                <i class="fas fa-phone me-2"></i>Điện thoại:
+                                            </td>
+                                            <td>@Model.Phone</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted">
+                                                <i class="fas fa-calendar-alt me-2"></i>Ngày tạo:
+                                            </td>
+                                            <td>@Model.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="text-primary mb-0">
+                            <i class="fas fa-user-graduate me-2"></i>Danh sách sinh viên quản lý
+                        </h5>
+                        <a href="@Url.Action("AddStudent", new { lecturerId = Model.LecturerId })" class="btn btn-primary btn-sm">
+                            <i class="fas fa-user-plus me-2"></i>Thêm sinh viên
+                        </a>
+                    </div>
+
+                    <form asp-action="Details" method="get" class="mb-3">
+                         <input type="hidden" name="id" value="@Model.LecturerId" />
+                        <div class="input-group">
+                            <input type="text" name="searchString" class="form-control" placeholder="Tìm kiếm sinh viên..." value="@ViewBag.CurrentSearchString">
+                            <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
+                             <a href="@Url.Action("Details", new { id = Model.LecturerId })" class="btn btn-outline-secondary">Hiển thị tất cả</a>
+                        </div>
+                    </form>
+
+                    @if (ViewBag.Students != null && ViewBag.Students.Count > 0)
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Họ và tên</th>
+                                        <th>Lớp</th>
+                                        <th>Ngành</th>
+                                        <th>Email</th>
+                                        <th>Số điện thoại</th>
+                                        <th class="text-end">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var student in ViewBag.Students)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div>
+                                                        <div class="fw-bold">@student.FullName</div>
+                                                        <small class="text-muted">Mã SV: @student.StudentId</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>@student.Class</td>
+                                            <td>@student.Major</td>
+                                            <td>@student.Email</td>
+                                            <td>@student.Phone</td>
+                                            <td class="text-end">
+                                                <form asp-action="RemoveStudent" method="post" class="d-inline">
+                                                    <input type="hidden" name="lecturerId" value="@Model.LecturerId" />
+                                                    <input type="hidden" name="studentId" value="@student.StudentId" />
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm" 
+                                                            onclick="return confirm('Bạn có chắc muốn xóa sinh viên này?');">
+                                                        <i class="fas fa-user-minus"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span>Chưa có sinh viên nào được phân công.</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Hiển thị thông báo nếu có
+            @if (TempData["Success"] != null)
+            {
+                <text>
+                toastr.success('@TempData["Success"]');
+                </text>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <text>
+                toastr.error('@TempData["Error"]');
+                </text>
+            }
+        });
+    </script>
+}

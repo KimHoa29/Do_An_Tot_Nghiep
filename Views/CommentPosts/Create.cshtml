@@ -1,0 +1,49 @@
+﻿@model Do_An_Tot_Nghiep.Models.CommentPost
+
+@{
+    ViewData["Title"] = "Tạo bình luận mới";
+}
+
+<h2 class="text-center text-navy">@ViewData["Title"]</h2>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <form asp-action="Create" enctype="multipart/form-data" class="card shadow-sm">
+            <div class="card-body">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="PostId" class="form-label">Tài liệu</label>
+                    <select asp-for="PostId" class="form-select" asp-items="ViewBag.PostId"></select>
+                    <span asp-validation-for="PostId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Content" class="form-label">Nội dung</label>
+                    <textarea asp-for="Content" class="form-control" rows="5"></textarea>
+                    <span asp-validation-for="Content" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Ảnh đính kèm</label>
+                    <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                </div>
+
+                <div class="text-center">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Lưu
+                    </button>
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Quay lại
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

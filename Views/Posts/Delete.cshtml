@@ -1,0 +1,61 @@
+﻿@model Do_An_Tot_Nghiep.Models.Post
+
+@{
+    ViewData["Title"] = "Xóa bài viết";
+}
+
+<div class="container">
+    <h2 class="text-center text-navy mb-4">@ViewData["Title"]</h2>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5>Bạn có chắc chắn muốn xóa bài viết này?</h5>
+                    </div>
+
+                    <dl class="row">
+                        <dt class="col-sm-3">Tiêu đề</dt>
+                        <dd class="col-sm-9">@Html.Raw(Model.Title)</dd>
+
+                        <dt class="col-sm-3">Nội dung</dt>
+                        <dd class="col-sm-9">@Html.Raw(Model.Content)</dd>
+
+                        <dt class="col-sm-3">Người tạo</dt>
+                        <dd class="col-sm-9">@Model.User?.Username</dd>
+
+                        <dt class="col-sm-3">Ngày tạo</dt>
+                        <dd class="col-sm-9">@Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</dd>
+
+                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                        {
+                            <dt class="col-sm-3">Ảnh</dt>
+                            <dd class="col-sm-9">
+                                <img src="@Model.ImageUrl" alt="Ảnh bài viết" class="img-thumbnail" style="max-width: 200px" />
+                            </dd>
+                        }
+
+                        @if (!string.IsNullOrEmpty(Model.FileUrl))
+                        {
+                            <dt class="col-sm-3">Tệp đính kèm</dt>
+                            <dd class="col-sm-9">
+                                <a href="@Model.FileUrl" target="_blank">@System.IO.Path.GetFileName(Model.FileUrl)</a>
+                            </dd>
+                        }
+                    </dl>
+
+                    <form asp-action="Delete" class="text-center mt-4">
+                        <input type="hidden" asp-for="PostId" />
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt"></i> Xác nhận xóa
+                        </button>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Quay lại
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

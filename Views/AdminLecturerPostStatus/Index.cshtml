@@ -1,0 +1,200 @@
+@model IEnumerable<Do_An_Tot_Nghiep.Models.ViewModels.AdminLecturerPostStatusViewModel> 
+@using System.Text.RegularExpressions;
+
+@{
+    ViewData["Title"] = "Thống kê trạng thái trả lời bài viết của giảng viên";
+    string StripHtml(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        return Regex.Replace(input, "<.*?>", string.Empty);
+    }
+    var lecturers = ViewBag.LecturerList as List<string>;
+    var selectedStatus = ViewBag.StatusFilter as string;
+}
+
+<div class="container-fluid px-4 py-4">
+    <h2 class="mb-4 fw-bold">Thống kê trạng thái trả lời bài viết của giảng viên</h2>
+
+    @{
+        var respondedCount = Model.Count(item => item.HasResponded);
+        var pendingCount = Model.Count(item => !item.HasResponded);
+    }
+
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3 mb-md-0">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                    <div class="status-icon-success p-3 rounded-3 me-3">
+                        <i class="fas fa-check fa-2x text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0 fw-bold">@respondedCount</h3>
+                        <p class="text-muted mb-0">Đã phản hồi</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body d-flex align-items-center">
+                     <div class="status-icon-warning p-3 rounded-3 me-3">
+                        <i class="fas fa-clock fa-2x text-white"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0 fw-bold">@pendingCount</h3>
+                        <p class="text-muted mb-0">Chờ phản hồi</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="get" class="row g-3 mb-4 align-items-end">
+        <div class="col-md-4">
+            <label for="lecturerFilter" class="form-label fw-semibold">Lọc theo giảng viên:</label>
+            <select name="lecturerName" id="lecturerFilter" class="form-select">
+                <option value="">Tất cả giảng viên</option>
+                @if (lecturers != null)
+                {
+                    @foreach (var name in lecturers)
+                    {
+                        <option value="@name">@name</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="statusFilter" class="form-label fw-semibold">Lọc theo trạng thái:</label>
+            <select name="status" id="statusFilter" class="form-select">
+                @Html.Raw($"<option value=\"\">Tất cả trạng thái</option>")
+                @Html.Raw($"<option value=\"responded\" {(selectedStatus == "responded" ? "selected" : "")}>Đã phản hồi</option>")
+                @Html.Raw($"<option value=\"pending\" {(selectedStatus == "pending" ? "selected" : "")}>Chờ phản hồi</option>")
+            </select>
+        </div>
+        <div class="col-md-4">
+            <button type="submit" class="btn btn-primary">Lọc</button>
+        </div>
+    </form>
+
+    <div class="card border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="admin-status-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="border-0">Bài viết</th>
+                            <th class="border-0">Ngày tạo</th>
+                            <th class="border-0">Giảng viên</th>
+                            <th class="border-0">Khoa</th>
+                            <th class="border-0">Trạng thái</th>
+                            <th class="border-0">Thời gian phản hồi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.OrderByDescending(x => x.PostCreatedAt))
+                        {
+                            <tr class="table-row-effect">
+                                <td style="max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                    <a href="@Url.Action("Details", "Posts", new { id = item.PostId })" class="text-decoration-none text-dark fw-semibold" title="@StripHtml(item.PostTitle)">
+                                        @StripHtml(item.PostTitle)
+                                    </a>
+                                </td>
+                                <td>@item.PostCreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="fw-medium">@item.LecturerName</td>
+                                <td>@item.LecturerDepartment</td>
+                                <td>
+                                    @if (item.HasResponded)
+                                    {
+                                        <span class="badge status-success px-3 py-2">
+                                            <i class="fas fa-check me-1"></i>
+                                            Đã phản hồi
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge status-warning px-3 py-2">
+                                            <i class="fas fa-clock me-1"></i>
+                                            Chờ phản hồi
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.ResponseTime.HasValue)
+                                    {
+                                        @item.ResponseTime.Value.ToString("dd/MM/yyyy HH:mm")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .table {
+        font-size: 0.95rem;
+        border-radius: 0;
+        overflow: auto;
+    }
+
+        .table thead th {
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            background: #f8f9fa;
+            border-top: none;
+        }
+
+    .table-row-effect {
+        transition: background 0.2s;
+    }
+
+        .table-row-effect:hover {
+            background: #f1f3f6;
+        }
+
+    .status-success {
+        background-color: #e8f5e9 !important;
+        color: #2e7d32 !important;
+        font-weight: 600;
+        border-radius: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .status-warning {
+        background-color: #fff3e0 !important;
+        color: #ef6c00 !important;
+        font-weight: 600;
+        border-radius: 1rem;
+        font-size: 0.95rem;
+    }
+
+    .status-icon-success {
+        background-color: #28a745 !important; /* Solid green */
+    }
+
+    .status-icon-warning {
+        background-color: #ffc107 !important; /* Solid yellow */
+    }
+
+    .fw-medium {
+        font-weight: 500;
+    }
+
+    .fw-semibold {
+        font-weight: 600;
+    }
+</style>

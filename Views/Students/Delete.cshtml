@@ -1,0 +1,49 @@
+﻿@model Do_An_Tot_Nghiep.Models.Student
+
+@{
+    ViewData["Title"] = "Xóa sinh viên";
+}
+
+<h2 class="text-center text-danger mt-3 fw-bold animate__animated animate__fadeInDown">⚠ Xóa sinh viên</h2>
+
+<h4 class="text-center text-warning">Bạn có chắc chắn muốn xóa sinh viên này không?</h4>
+
+<div class="border p-4 rounded shadow bg-white mt-4 animate__animated animate__fadeIn">
+    <dl class="row">
+        <dt class="col-sm-3 fw-bold text-danger">Mã sinh viên:</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.UserId)</dd>
+
+        <dt class="col-sm-3 fw-bold">Họ và tên:</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.FullName)</dd>
+
+        <dt class="col-sm-3 fw-bold">Lớp:</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Class)</dd>
+
+        <dt class="col-sm-3 fw-bold">Ngành:</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Major)</dd>
+
+        <dt class="col-sm-3 fw-bold">Email:</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Email)</dd>
+
+        <dt class="col-sm-3 fw-bold">Số điện thoại:</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.Phone)</dd>
+
+        <dt class="col-sm-3 fw-bold">Ngày tạo:</dt>
+        <dd class="col-sm-9">@Html.DisplayFor(model => model.CreatedAt)</dd>
+    </dl>
+
+    <form asp-action="Delete" class="text-center animate__animated animate__fadeInUp">
+        <input type="hidden" asp-for="StudentId" />
+
+        <button type="submit" class="btn btn-danger px-4 shadow" onclick="return confirm('⚠ Bạn có chắc chắn muốn xóa sinh viên này?')">
+            ❌ Xóa
+        </button>
+        <a asp-action="Index" class="btn btn-secondary px-4 ms-2 shadow">🔙 Quay lại</a>
+    </form>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

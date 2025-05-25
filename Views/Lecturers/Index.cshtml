@@ -1,0 +1,114 @@
+﻿@model IEnumerable<Do_An_Tot_Nghiep.Models.Lecturer>
+
+@{
+    ViewData["Title"] = "Danh sách giảng viên";
+}
+
+<head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+    <link href="~/css/index.css" rel="stylesheet" />
+</head>
+
+<h2 class="text-center text-navy">Danh sách giảng viên</h2>
+
+<div class="d-flex justify-content-between align-items-center my-3">
+    <!-- Form tìm kiếm -->
+    <div class="d-flex w-75">
+        <form asp-controller="Lecturers" asp-action="Index" method="get" class="d-flex w-100 gap-2">
+            <input type="text" name="searchString" class="form-control" placeholder="Nhập tên, email hoặc chuyên môn..." style="max-width: 300px;" value="@Context.Request.Query["searchString"]" />
+            <button type="submit" class="btn btn-outline-primary btn-sm shadow">
+                <i class="fas fa-search"></i> Tìm kiếm
+            </button>
+        </form>
+    </div>
+
+    <!-- Nút thêm giảng viên & Xóa đã chọn -->
+    <div class="d-flex gap-2">
+        <a asp-action="Create" class="btn btn-outline-success shadow">
+            <i class="fas fa-plus"></i> Thêm giảng viên
+        </a>
+        <button type="submit" form="deleteForm" class="btn btn-outline-danger shadow" id="deleteSelectedBtn" disabled onclick="return confirm('Bạn có chắc chắn muốn xóa các giảng viên đã chọn?')">
+            <i class="fas fa-trash"></i> Xóa đã chọn
+        </button>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning text-center">Chưa có dữ liệu giảng viên.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <form asp-controller="Lecturers" asp-action="DeleteSelected" method="post" id="deleteForm">
+            <table class="table table-hover table-bordered text-center align-middle shadow-sm">
+                <thead class="table-navy">
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" /></th>
+                        <th>Mã giảng viên</th>
+                        <th>Họ và tên</th>
+                        <th>Chức vụ</th>
+                        <th>Khoa</th>
+                        <th>Chuyên môn</th>
+                        <th>SL sinh viên</th>
+                        <th>Số điện thoại</th>
+                        <th>Email</th>
+                        <th>Ngày tạo</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr class="table-light">
+                            <td>
+                                <input type="checkbox" name="selectedLecturers" value="@item.LecturerId" class="selectLecturer" />
+                            </td>
+                            <td>@item.UserId</td>
+                            <td>@item.FullName</td>
+                            <td>@item.Position</td>
+                            <td>@item.Department</td>
+                            <td>@item.Specialization</td>
+                            <td>@item.StudentCount</td>
+                            <td>@item.Phone</td>
+                            <td>@item.Email</td>
+                            <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-center">
+                                <a asp-action="Edit" asp-route-id="@item.LecturerId" class="btn-sm text-warning" title="Sửa">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a asp-action="Details" asp-route-id="@item.LecturerId" class="btn-sm text-info" title="Chi tiết">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.LecturerId" class="btn-sm text-danger" title="Xóa" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </form>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Chọn hoặc bỏ chọn tất cả checkbox
+        document.getElementById('selectAll').addEventListener('change', function () {
+            const checkboxes = document.querySelectorAll('.selectLecturer');
+            checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+            toggleDeleteButton();
+        });
+
+        // Theo dõi các checkbox riêng lẻ
+        const lecturerCheckboxes = document.querySelectorAll('.selectLecturer');
+        lecturerCheckboxes.forEach(checkbox => checkbox.addEventListener('change', toggleDeleteButton));
+
+        function toggleDeleteButton() {
+            const selectedCount = document.querySelectorAll('.selectLecturer:checked').length;
+            const deleteBtn = document.getElementById('deleteSelectedBtn');
+            deleteBtn.disabled = selectedCount === 0;
+        }
+    </script>
+}

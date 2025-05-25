@@ -1,0 +1,141 @@
+﻿@model IEnumerable<Do_An_Tot_Nghiep.Models.Post>
+@{
+    ViewData["Title"] = "Danh Sách Tài Liệu";
+}
+
+<head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+    <link href="~/css/index.css" rel="stylesheet" />
+</head>
+
+<h2 class="text-center text-navy">Danh sách bài đăng</h2>
+
+<div class="d-flex justify-content-between align-items-center my-3">
+    <!-- Form tìm kiếm -->
+    <div class="d-flex w-75">
+        <form asp-controller="Documents" asp-action="Index" method="get" class="d-flex w-100 gap-2">
+            <input type="text" name="searchString" class="form-control" placeholder="Nhập tên hoặc nội dung..." style="max-width: 300px;" />
+            <button type="submit" class="btn btn-outline-primary btn-sm shadow">
+                <i class="fas fa-search"></i> Tìm kiếm
+            </button>
+        </form>
+    </div>
+
+    <!-- Nút thêm chủ đề & Xóa đã chọn -->
+    <div class="d-flex gap-2">
+        <a asp-action="Create" class="btn btn-outline-success shadow">
+            <i class="fas fa-plus"></i> Tạo mới
+        </a>
+        <button type="submit" form="deleteForm" class="btn btn-outline-danger shadow" id="deleteSelectedBtn" disabled onclick="return confirm('Bạn có chắc chắn muốn xóa các chủ đề đã chọn?')">
+            <i class="fas fa-trash"></i> Xóa đã chọn
+        </button>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-warning text-center">Chưa có dữ liệu chủ đề.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <form asp-controller="Documents" asp-action="DeleteMultiple" method="post" id="deleteForm">
+            <table class="table table-hover table-bordered text-center align-middle shadow-sm">
+                <thead class="table-navy">
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" /></th>
+                        <th>Tiêu đề</th>
+                        <th>Nội dung</th>
+                        <th>Loại hiển thị</th>
+                        <th>Ngày tạo</th>
+                        <th>Ngày cập nhật</th>
+                        <th>Ảnh</th>
+                        <th>Tệp đính kèm</th>
+                        <th>Người tạo</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr class="table-light">
+                            <td>
+                                <input type="checkbox" name="selectedDocuments" value="@item.PostId" class="selectDocument" />
+                            </td>
+                            <td>@Html.Raw(@item.Title)</td>
+                            <td>@Html.Raw(@item.Content)</td>
+                            <td>
+                                @{
+                                    var type = item.VisibilityType?.ToLower();
+                                    string label = type switch
+                                    {
+                                        "public" => "Công khai",
+                                        "private" => "Riêng tư",
+                                        "group" => "Nhóm",
+                                        "custom" => "Tùy chọn",
+                                        _ => "Không rõ"
+                                    };
+                                    @label
+                                }
+                            </td>
+                            <td>@item.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@item.UpdatedAt?.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                {
+                                    <img src="@item.ImageUrl" alt="Ảnh Chủ Đề" width="100" height="100" />
+                                }
+                                else
+                                {
+                                    <span>Không có ảnh</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.FileUrl))
+                                {
+                                    <a href="@item.FileUrl" target="_blank">@System.IO.Path.GetFileName(item.FileUrl)</a>
+                                }
+                                else
+                                {
+                                    <span>Không có tệp</span>
+                                }
+                            </td>
+                            <td>@item.User?.Username</td>
+
+                            <td class="text-center">
+                                <a asp-action="Edit" asp-route-id="@item.PostId" class="btn-sm text-warning" title="Sửa">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a asp-action="Details" asp-route-id="@item.PostId" class="btn-sm text-info" title="Chi tiết">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.PostId" class="btn-sm text-danger" title="Xóa" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </form>
+    </div>
+}
+
+<script>
+    // Chọn hoặc bỏ chọn tất cả checkbox
+    document.getElementById('selectAll').addEventListener('change', function () {
+        const checkboxes = document.querySelectorAll('.selectDocument');
+        checkboxes.forEach(checkbox => checkbox.checked = this.checked);
+        toggleDeleteButton();
+    });
+
+    // Theo dõi các checkbox riêng lẻ
+    const documentCheckboxes = document.querySelectorAll('.selectDocument');
+    documentCheckboxes.forEach(checkbox => checkbox.addEventListener('change', toggleDeleteButton));
+
+    function toggleDeleteButton() {
+        const selectedCount = document.querySelectorAll('.selectDocument:checked').length;
+        const deleteBtn = document.getElementById('deleteSelectedBtn');
+        deleteBtn.disabled = selectedCount === 0;
+    }
+</script>

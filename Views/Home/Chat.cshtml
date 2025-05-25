@@ -1,0 +1,358 @@
+@{
+    ViewData["Title"] = "Chat với Gemini";
+    var userName = ViewBag.CurrentUserName ?? "bạn";
+}
+
+<div class="gemini-chat-wrapper">
+    <div class="gemini-greeting" id="greeting-block">
+        <span class="greeting-gradient">Xin chào @userName!</span>
+    </div>
+    <div class="gemini-chat-area" id="chat-area" style="display:none;">
+        <div id="chat-messages" class="chat-messages"></div>
+    </div>
+    <div class="gemini-input-bar">
+        <div class="input-group gemini-input-group">
+            <input type="text" id="message-input" class="form-control gemini-input" placeholder="Hỏi Chatbot" autocomplete="off">
+            <button class="btn gemini-send-btn" id="send-button" title="Gửi">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+            <button class="btn gemini-mic-btn" id="mic-button" title="Voice" disabled>
+                <i class="fas fa-microphone"></i>
+            </button>
+        </div>
+@*         <div class="gemini-toolbar">
+            <button class="gemini-tool-btn" disabled><i class="fas fa-search"></i> Deep Research</button>
+            <button class="gemini-tool-btn" disabled><i class="fas fa-grip-horizontal"></i> Canvas</button>
+        </div> *@
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            const chatMessages = $('#chat-messages');
+            const messageInput = $('#message-input');
+            const sendButton = $('#send-button');
+            const greetingBlock = $('#greeting-block');
+            const chatArea = $('#chat-area');
+            const micButton = $('#mic-button');
+
+            // --- Voice Recognition ---
+            if ('webkitSpeechRecognition' in window) {
+                micButton.prop('disabled', false);
+                const recognition = new webkitSpeechRecognition();
+                recognition.lang = 'vi-VN';
+                recognition.continuous = false;
+                recognition.interimResults = false;
+
+                micButton.on('click', function () {
+                    recognition.start();
+                    micButton.addClass('listening');
+                });
+                recognition.onresult = function (event) {
+                    const transcript = event.results[0][0].transcript;
+                    messageInput.val(transcript);
+                    messageInput.focus();
+                    micButton.removeClass('listening');
+                };
+                recognition.onerror = function () {
+                    alert('Không nhận diện được giọng nói. Vui lòng thử lại!');
+                    micButton.removeClass('listening');
+                };
+                recognition.onend = function () {
+                    micButton.removeClass('listening');
+                };
+            } else {
+                micButton.hide();
+            }
+            // --- End Voice Recognition ---
+
+            // Load lịch sử chat khi vào trang
+            async function loadHistory() {
+                const response = await fetch('/api/chat/history');
+                if (response.ok) {
+                    const history = await response.json();
+                    if (history.length > 0) {
+                        greetingBlock.hide();
+                        chatArea.show();
+                        history.forEach(item => {
+                            addMessage(item.message, item.role === 'user');
+                        });
+                    }
+                }
+            }
+            loadHistory();
+
+            function getUserAvatar() {
+                let name = '@userName';
+                let initial = name.trim().charAt(0).toUpperCase();
+                return `<div class='avatar-user' title='${name}'>${initial}</div>`;
+            }
+            function getBotAvatar() {
+                return `<div class='avatar-bot'><img src='/css/img/chatbot.webp' style='width:32px;height:32px;'></div>`;
+            }
+            function addMessage(message, isUser) {
+                greetingBlock.hide();
+                chatArea.show();
+                const avatar = isUser ? getUserAvatar() : getBotAvatar();
+                const bubbleClass = isUser ? 'bubble-user' : 'bubble-bot';
+                const alignClass = isUser ? 'justify-content-end' : 'justify-content-start';
+                const msgHtml = `
+                    <div class="d-flex ${alignClass} mb-2">
+                        ${isUser ? '' : avatar}
+                        <div class="${bubbleClass}">${message}</div>
+                        ${isUser ? avatar : ''}
+                    </div>
+                `;
+                chatMessages.append(msgHtml);
+                chatMessages.scrollTop(chatMessages[0].scrollHeight);
+            }
+            function addLoading() {
+                chatArea.show();
+                greetingBlock.hide();
+                const loadingHtml = `
+                    <div class="d-flex justify-content-start mb-2 loading-bot" id="loading-bot">
+                        ${getBotAvatar()}
+                        <div class="bubble-bot">
+                            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                        </div>
+                    </div>
+                `;
+                chatMessages.append(loadingHtml);
+                chatMessages.scrollTop(chatMessages[0].scrollHeight);
+            }
+            function removeLoading() {
+                $('#loading-bot').remove();
+            }
+            async function sendMessage() {
+                const message = messageInput.val().trim();
+                if (message) {
+                    addMessage(message, true);
+                    messageInput.val('');
+                    addLoading();
+                    try {
+                        const response = await fetch('/api/chat/send', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify(message)
+                        });
+                        removeLoading();
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        const data = await response.json();
+                        addMessage(data.response, false);
+                    } catch (error) {
+                        addMessage('Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.', false);
+                        removeLoading();
+                        console.error('Error:', error);
+                    }
+                }
+            }
+            sendButton.click(sendMessage);
+            messageInput.keypress(function(e) {
+                if (e.which == 13) {
+                    sendMessage();
+                }
+            });
+        });
+    </script>
+    <style>
+        .gemini-chat-wrapper {
+            min-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            background: #fff;
+            position: relative;
+        }
+        .gemini-greeting {
+            width: 100%;
+            min-height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .greeting-gradient {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #4f8cff 0%, #F07C18 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+        .gemini-chat-area {
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 120px auto;
+            background: none;
+            box-shadow: none;
+            border: none;
+        }
+        .chat-messages {
+            min-height: 120px;
+            max-height: none;
+            overflow-y: visible;
+            padding: 32px 0 0 0;
+            background: none;
+            box-shadow: none;
+            border: none;
+        }
+        .bubble-user, .bubble-bot {
+            max-width: 70%;
+            padding: 14px 20px;
+            border-radius: 18px;
+            font-size: 1rem;
+            word-break: break-word;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            position: relative;
+            min-width: 40px;
+        }
+        .bubble-user {
+            background: linear-gradient(90deg, #F07C18 0%, #4f8cff 100%);
+            color: #fff;
+            margin-left: 120px;
+        }
+        .bubble-bot {
+            background: #f5f6fa;
+            color: #222;
+            border: 1px solid #e0e6ed;
+            margin-right: 120px;
+        }
+        .avatar-user, .avatar-bot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin: 0 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .avatar-user {
+            background: linear-gradient(135deg, #F07C18 0%, #4f8cff 100%);
+            color: #fff;
+        }
+        .avatar-bot {
+            background: #fff;
+            border: 2.5px solid #F07C18;
+            overflow: hidden;
+            padding: 0;
+        }
+        .avatar-bot img {
+            width: 90%;
+            height: 90%;
+            object-fit: contain;
+            border-radius: 50%;
+            display: block;
+            background: #fff;
+        }
+        .loading-bot .bubble-bot {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            margin: 0 2px;
+            background: #F07C18;
+            border-radius: 50%;
+            animation: blink 1.4s infinite both;
+        }
+        .dot:nth-child(2) { animation-delay: 0.2s; }
+        .dot:nth-child(3) { animation-delay: 0.4s; }
+        @@ keyframes blink {
+            0%, 80%, 100% { opacity: 0.2; }
+            40% { opacity: 1; }
+        }
+        .gemini-input-bar {
+            position: fixed;
+            left: 0; right: 0; bottom: 0;
+            width: 100vw;
+            background: #fff;
+            box-shadow: 0 -2px 16px 0 rgba(0,0,0,0.06);
+            padding: 18px 0 10px 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .gemini-input-group {
+            max-width: 600px;
+            width: 100%;
+            border-radius: 32px;
+            background: #f5f6fa;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            padding: 4px 8px;
+        }
+        .gemini-input {
+            border: none;
+            background: transparent;
+            font-size: 1.1rem;
+            border-radius: 32px;
+            box-shadow: none;
+            outline: none;
+        }
+        .gemini-send-btn, .gemini-mic-btn {
+            border: none;
+            background: transparent;
+            font-size: 1.3rem;
+            margin-left: 4px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .gemini-send-btn:hover, .gemini-mic-btn:hover {
+            background: #f5f6fa;
+        }
+        .gemini-toolbar {
+            max-width: 600px;
+            width: 100%;
+            margin: 8px auto 0 auto;
+            display: flex;
+            gap: 8px;
+        }
+        .gemini-tool-btn {
+            border: none;
+            background: #f5f6fa;
+            color: #888;
+            font-size: 0.95rem;
+            border-radius: 16px;
+            padding: 4px 14px;
+            margin-right: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .gemini-tool-btn:disabled {
+            opacity: 0.7;
+        }
+        @@ media (max-width: 768px) {
+            .gemini-chat-area, .gemini-input-group, .gemini-toolbar { max-width: 100vw; }
+            .gemini-greeting { min-height: 40vh; }
+            .gemini-input-bar { padding: 10px 0 6px 0; }
+        }
+        .gemini-mic-btn.listening {
+            color: #1976d2;
+            animation: pulse 1s infinite;
+        }
+        @@ keyframes pulse {
+            0% { box-shadow: 0 0 0 0 #1976d233; }
+            70% { box-shadow: 0 0 0 10px #1976d200; }
+            100% { box-shadow: 0 0 0 0 #1976d233; }
+        }
+    </style>
+} 

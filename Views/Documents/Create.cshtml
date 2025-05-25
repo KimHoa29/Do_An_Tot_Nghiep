@@ -1,0 +1,126 @@
+﻿@model Do_An_Tot_Nghiep.Models.Document
+
+@{
+    ViewData["Title"] = "Thêm tài liệu";
+}
+
+<head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="~/css/topiccreate.css" />
+    <!-- Thêm script TinyMCE -->
+    <script src="https://cdn.tiny.cloud/1/vdqkemzz8y2cjfb2niywi90sdepwcaehhtiafnx0jn3qjmmf/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+</head>
+
+<div class="custom-post-container">
+    <form asp-action="Create" enctype="multipart/form-data" class="post-form" id="documentForm">
+        <div class="d-flex justify-content-between flex-wrap align-items-start mb-4">
+            <!-- Bên trái: Avatar + Username + Role -->
+            <div class="d-flex align-items-center mt-3 mt-md-0">
+                <img src="@(string.IsNullOrEmpty(ViewBag.Avatar) ? "/css/img/default-avatar.jpg" : ViewBag.Avatar)" alt="Avatar" class="avatar me-3" />
+                <div class="user-info">
+                    <strong class="username">@ViewBag.Username</strong><br />
+                    <span class="role">
+                        @{
+                            var role = ViewBag.Role as string;
+                            string roleText = role switch
+                            {
+                                "Lecturer" => "Giảng viên, CVHT",
+                                "Admin" => "Nhân viên",
+                                "Student" => "Sinh viên",
+                                _ => "Người dùng"
+                            };
+                        }
+                        @roleText
+                    </span>
+                </div>
+            </div>
+
+            <!-- Bên phải: Form loại hiển thị -->
+            <div class="form-group ms-3 mt-3" style="min-width: 220px;">
+                <label>Loại hiển thị</label>
+                <select id="VisibilityType" name="VisibilityType" class="form-control">
+                    @foreach (var type in (SelectList)ViewBag.VisibilityTypes)
+                    {
+                        <option value="@type.Value">@type.Text</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <!-- Chọn nhóm (nếu visibility = group) -->
+        <div class="mb-3" id="groupSelect" style="display: none;">
+            <label class="form-label">Chọn nhóm</label>
+            <select name="selectedGroups" class="form-control" multiple>
+                @foreach (var group in (MultiSelectList)ViewBag.Groups)
+                {
+                    <option value="@group.Value">@group.Text</option>
+                }
+            </select>
+        </div>
+
+        <!-- Chọn người dùng (nếu visibility = custom) -->
+        <div class="mb-3" id="userSelect" style="display: none;">
+            <label class="form-label">Chọn người dùng</label>
+            <select name="selectedUsers" class="form-control" multiple>
+                @foreach (var user in (MultiSelectList)ViewBag.Users)
+                {
+                    <option value="@user.Value">@user.Text</option>
+                }
+            </select>
+        </div>
+        <!-- Tiêu đề (rich text) -->
+        <div class="form-group">
+            <label asp-for="Title" class="form-label">Tiêu đề:</label>
+            <textarea id="Title" name="Title" class="form-control"></textarea>
+            <span asp-validation-for="Title" class="text-danger"></span>
+        </div>
+
+        <!-- Nội dung (rich text) -->
+        <div class="form-group">
+            <label asp-for="Content" class="form-label">Nội dung:</label>
+            <textarea id="Content" name="Content" class="form-control"></textarea>
+            <span asp-validation-for="Content" class="text-danger"></span>
+        </div>
+
+        <!-- Ảnh -->
+        <div class="form-group">
+            <label>Ảnh (nếu có):</label>
+            <input type="file" name="imageFile" class="form-control" />
+        </div>
+
+        <!-- File đính kèm -->
+        <div class="form-group">
+            <label>File đính kèm (nếu có):</label>
+            <input type="file" name="documentFile" class="form-control" />
+        </div>
+
+        <!-- Nút hành động -->
+        <div class="form-actions">
+            <button type="submit" class="btn-submit">Đăng bài</button>
+            <a href="/Home/Index?tab=TaiLieuChung" class="btn-cancel">Quay lại</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+            // Khởi tạo TinyMCE cho các trường Tiêu đề và Nội dung
+            tinymce.init({
+                    selector: '#Title, #Content',
+                plugins: 'advlist autolink lists link image charmap print preview anchor help',
+                toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image | help',
+                menubar: false,
+                entity_encoding: 'raw'  // Sử dụng raw để lưu HTML mà không mã hóa các ký tự
+        });
+
+        // Validate loại hiển thị
+        document.getElementById("VisibilityType").addEventListener("change", function () {
+            var value = this.value;
+            document.getElementById("groupSelect").style.display = (value === "group") ? "block" : "none";
+                document.getElementById("userSelect").style.display = (value === "custom") ? "block" : "none";
+        });
+
+        // Gọi lần đầu để khởi động hiển thị đúng nếu có sẵn
+            document.getElementById("VisibilityType").dispatchEvent(new Event("change"));
+
+    </script>
+}

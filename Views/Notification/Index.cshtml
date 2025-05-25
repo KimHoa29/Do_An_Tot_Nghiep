@@ -1,0 +1,195 @@
+@model IEnumerable<Do_An_Tot_Nghiep.Models.Notification>
+
+@{
+    ViewData["Title"] = "Thông báo";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-bell me-2"></i>Thông báo</h2>
+                <div>
+                    <button class="btn btn-outline-primary me-2" onclick="filterNotifications('all')">
+                        <i class="fas fa-list"></i> Tất cả
+                    </button>
+                    <button class="btn btn-outline-primary me-2" onclick="filterNotifications('unread')">
+                        <i class="fas fa-envelope"></i> Chưa đọc
+                    </button>
+                    @if (Model.Any(n => !n.IsRead))
+                    {
+                        <button class="btn btn-secondary" onclick="markAllAsRead()">
+                            <i class="fas fa-check-double"></i> Đánh dấu tất cả đã đọc
+                        </button>
+                    }
+                </div>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>Bạn chưa có thông báo nào.
+                </div>
+            }
+            else
+            {
+                <div class="list-group notifications-list">
+                    @foreach (var notification in Model)
+                    {
+                        var iconClass = notification.Type switch
+                        {
+                            1 => "fas fa-comment",
+                            2 => "fas fa-users",
+                            3 => "fas fa-file-alt",
+                            4 => "fas fa-file",
+                            5 => "fas fa-comment",
+                            6 => "fas fa-file",
+                            7 => "fas fa-comment",
+                            _ => "fas fa-bell"
+                        };
+
+                        var typeText = notification.Type switch
+                        {
+                            1 => "Bình luận",
+                            2 => "Nhóm",
+                            3 => "Chủ đề",
+                            4 => "Tài liệu",
+                            5 => "Bình luận",
+                            6 => "Bài đăng",
+                            7 => "Bình luận",
+                            _ => "Thông báo"
+                        };
+
+                        <div class="list-group-item list-group-item-action notification-item @(!notification.IsRead ? "unread" : "")" 
+                             data-type="@notification.Type">
+                            <div class="d-flex w-100 justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="notification-icon me-3">
+                                        <i class="@iconClass"></i>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-1">@StripHtml(notification.Title)</h5>
+                                        <p class="mb-1 text-muted">@StripHtml(notification.Content)</p>
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock me-1"></i>
+                                            @{
+                                                var timeDiff = DateTime.Now - notification.CreatedAt;
+                                                if (timeDiff.TotalMinutes < 1)
+                                                {
+                                                    <span>Vừa xong</span>
+                                                }
+                                                else if (timeDiff.TotalHours < 1)
+                                                {
+                                                    <span>@((int)timeDiff.TotalMinutes) phút trước</span>
+                                                }
+                                                else if (timeDiff.TotalDays < 1)
+                                                {
+                                                    <span>@((int)timeDiff.TotalHours) giờ trước</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>@notification.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                                }
+                                            }
+                                            <span class="ms-2">
+                                                <i class="fas fa-tag me-1"></i>@typeText
+                                            </span>
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="notification-actions">
+                                    @if (!notification.IsRead)
+                                    {
+                                        <button class="btn btn-sm btn-outline-primary me-2" onclick="markAsRead(@notification.NotificationId)">
+                                            <i class="fas fa-check"></i> Đánh dấu đã đọc
+                                        </button>
+                                    }
+                                    @if (!string.IsNullOrEmpty(notification.Path))
+                                    {
+                                        <a href="@notification.Path" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-external-link-alt"></i> Xem
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .notification-item {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+
+    .notification-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .notification-item.unread {
+        background-color: #f8f9fa;
+        border-left: 4px solid #007bff;
+    }
+
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .notification-icon i {
+        color: #6c757d;
+    }
+
+    .notification-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+</style>
+
+@section Scripts {
+    <script>
+        function markAsRead(id) {
+            $.post('/Notification/MarkAsRead/' + id, function(response) {
+                if (response.success) {
+                    location.reload();
+                }
+            });
+        }
+
+        function markAllAsRead() {
+            $.post('/Notification/MarkAllAsRead', function(response) {
+                if (response.success) {
+                    location.reload();
+                }
+            });
+        }
+
+        function filterNotifications(type) {
+            const items = document.querySelectorAll('.notification-item');
+            items.forEach(item => {
+                if (type === 'all') {
+                    item.style.display = 'block';
+                } else if (type === 'unread') {
+                    item.style.display = item.classList.contains('unread') ? 'block' : 'none';
+                }
+            });
+        }
+    </script>
+}
+
+@functions{
+    public static string StripHtml(string input)
+    {
+        return System.Text.RegularExpressions.Regex.Replace(input ?? string.Empty, "<.*?>", string.Empty);
+    }
+} 

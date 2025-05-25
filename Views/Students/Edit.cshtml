@@ -1,0 +1,99 @@
+﻿@model Do_An_Tot_Nghiep.Models.Student
+
+@{
+    ViewData["Title"] = "Chỉnh sửa sinh viên";
+}
+
+<head>
+    <link rel="stylesheet" href="~/css/form-style.css" />
+</head>
+
+<h2 class="text-center text-primary mt-3 fw-bold">Chỉnh sửa sinh viên</h2>
+<hr />
+
+<div class="row justify-content-center">
+    <div class="col-md-6 form-container">
+        <form asp-action="Edit" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="StudentId" />
+            <input type="hidden" name="id" value="@Model.StudentId" />
+
+            <!-- Ảnh đại diện -->
+            @{
+                var avatarUrl = Model?.User?.Avatar ?? "/uploads/img/avatar/default-avatar.jpg";
+            }
+
+            <div class="mb-4 text-center">
+                <img id="avatarPreview" class="rounded-circle mb-3"
+                     src="@avatarUrl"
+                     style="width: 150px; height: 150px; object-fit: cover;" />
+                <div class="mb-3">
+                    <label for="avatarFile" class="form-label">Ảnh đại diện</label>
+                    <input type="file" class="form-control" id="avatarFile" name="avatarFile" accept="image/*" onchange="previewImage(this);" />
+                </div>
+            </div>
+
+
+            <div class="mb-3">
+                <label asp-for="UserId" class="form-label">Mã sinh viên</label>
+                <input asp-for="UserId" class="form-control" readonly />
+                <span asp-validation-for="UserId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="FullName" class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                <input asp-for="FullName" class="form-control" required />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Class" class="form-label">Lớp <span class="text-danger">*</span></label>
+                <input asp-for="Class" class="form-control" required />
+                <span asp-validation-for="Class" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Major" class="form-label">Ngành <span class="text-danger">*</span></label>
+                <input asp-for="Major" class="form-control" required />
+                <span asp-validation-for="Major" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label">Email <span class="text-danger">*</span></label>
+                <input asp-for="Email" class="form-control" required />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Phone" class="form-label">Số điện thoại</label>
+                <input asp-for="Phone" class="form-control" />
+                <span asp-validation-for="Phone" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="CreatedAt" class="form-label">Ngày tạo</label>
+                <input asp-for="CreatedAt" class="form-control" readonly />
+                <span asp-validation-for="CreatedAt" class="text-danger"></span>
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-primary px-4 shadow">✅ Lưu</button>
+                <a asp-action="Details" asp-route-id="@Model.UserId" class="btn btn-secondary px-4 ms-2 shadow">🔙 Quay lại</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('avatarPreview').src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+}
