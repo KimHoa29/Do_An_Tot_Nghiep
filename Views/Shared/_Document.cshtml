@@ -2,7 +2,7 @@
 @model Document
 
 @{
-    var currentUserId = Context.Session.GetString("UserId");
+    var currentUserId = Context.Session.GetString("USERID");
     var isOwner = !string.IsNullOrEmpty(currentUserId) && Model.UserId.ToString() == currentUserId;
 
     // Debug information
@@ -17,6 +17,14 @@
         isLiked = Model.LikeDocuments != null && Model.LikeDocuments.Any(lp => lp.UserId == currentUserIdInt);
     }
     var likeCount = Model.LikeDocuments?.Count ?? 0;
+
+    // Kiểm tra xem người dùng hiện tại đã lưu tài liệu chưa
+    var isSaved = false;
+    if (!string.IsNullOrEmpty(currentUserId) && int.TryParse(currentUserId, out int currentUserIdInt2))
+    {
+        isSaved = Model.Saves != null && Model.Saves.Any(s => s.UserId == currentUserIdInt2);
+    }
+    var saveCount = Model.Saves?.Count ?? 0;
 }
 
 @if (Model != null)
@@ -108,6 +116,10 @@
             <button class="action-btn comment-btn" type="button" onclick="toggleCommentBlock('@Model.DocumentId')">
                 <i class="fas fa-comment"></i>
                 <span class="count-number">@(Model.CommentDocuments?.Count ?? 0)</span>
+            </button>
+            <button class="action-btn save-btn @(isSaved ? "saved" : "")" onclick="toggleSave('@Model.DocumentId', 'document')" data-document-id="@Model.DocumentId">
+                <i class="fas fa-bookmark"></i>
+                <span class="count-number">@saveCount</span>
             </button>
         </div>
 
@@ -522,6 +534,41 @@
             alert('Có lỗi xảy ra khi thêm phản hồi');
         }
     }
+
+    function toggleSave(id, type) {
+        const saveBtn = document.querySelector(`.save-btn[data-${type}-id="${id}"]`);
+        const saveCountSpan = saveBtn.querySelector('.count-number');
+        
+        fetch(`/Saves/ToggleSave/${type}/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.needLogin) {
+                window.location.href = '/Account/Login';
+                return;
+            }
+            if (data.success) {
+                if (data.isSaved) {
+                    saveBtn.classList.add('saved');
+                } else {
+                    saveBtn.classList.remove('saved');
+                }
+                saveCountSpan.textContent = data.saveCount;
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi thực hiện thao tác. Vui lòng thử lại sau.');
+        });
+    }
 </script>
 
 <style>
@@ -839,6 +886,24 @@
     .reply-actions {
         margin-top: 8px;
         text-align: right;
+    }
+
+    .save-btn {
+        color: #65676b;
+    }
+
+    .save-btn.saved {
+        color: #1877f2;
+    }
+
+    .save-btn.saved i {
+        animation: saveAnimation 0.3s ease;
+    }
+
+    @@keyframes saveAnimation {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
     }
 </style>
 

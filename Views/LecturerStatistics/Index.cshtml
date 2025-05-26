@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Thống kê bài viết cần phản hồi";
     var lecturer = Model.FirstOrDefault();
+    var status = Context.Request.Query["status"].ToString();
 }
 
 <!-- Thống kê -->
@@ -42,6 +43,39 @@
             </div>
         </div>
     </div>
+
+    <!-- Form lọc trạng thái -->
+    <form method="get" class="mb-3" style="max-width: 300px;">
+        <div class="input-group">
+            <select class="form-select" name="status">
+                @if (string.IsNullOrEmpty(status) || status == "all")
+                {
+                    <option value="all" selected>Tất cả</option>
+                }
+                else
+                {
+                    <option value="all">Tất cả</option>
+                }
+                @if (status == "responded")
+                {
+                    <option value="responded" selected>Đã phản hồi</option>
+                }
+                else
+                {
+                    <option value="responded">Đã phản hồi</option>
+                }
+                @if (status == "pending")
+                {
+                    <option value="pending" selected>Chờ phản hồi</option>
+                }
+                else
+                {
+                    <option value="pending">Chờ phản hồi</option>
+                }
+            </select>
+            <button class="btn btn-primary" type="submit">Lọc</button>
+        </div>
+    </form>
 
     <!-- Danh sách bài viết -->
     <div class="card border-0 shadow-sm">
@@ -102,7 +136,7 @@
                                         </a>
                                         @if (!post.HasResponded)
                                         {
-                                            <a href="@Url.Action("Create", "CommentPosts", new { postId = post.PostId })" 
+                                            <a href="@Url.Action("Details", "Posts", new { id = post.PostId })"
                                                class="btn btn-sm btn-light" 
                                                title="Phản hồi">
                                                 <i class="fas fa-reply"></i>

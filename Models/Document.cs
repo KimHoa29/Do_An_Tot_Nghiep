@@ -48,7 +48,9 @@ namespace Do_An_Tot_Nghiep.Models
     [DisplayName("Người dùng")]
     public int UserId { get; set; }
 
-    // Navigation property
+    public bool? IsSaved { get; set; }
+
+        // Navigation property
     [ForeignKey("UserId")]
     public User? User { get; set; }
 
@@ -59,5 +61,7 @@ namespace Do_An_Tot_Nghiep.Models
     public virtual ICollection<CommentDocument>? CommentDocuments { get; set; }
 
     public virtual ICollection<LikeDocument>? LikeDocuments { get; set; }
+
+    public virtual ICollection<Save> Saves { get; set; }
     }
 }

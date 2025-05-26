@@ -598,6 +598,8 @@ namespace Do_An_Tot_Nghiep.Controllers
                     .ThenInclude(pg => pg.Group)
                 .Include(p => p.PostUsers)
                     .ThenInclude(pu => pu.User)
+                .Include(p => p.PostMentions)
+                    .ThenInclude(pm => pm.User)
                 .FirstOrDefaultAsync(m => m.PostId == id);
 
             if (post == null)

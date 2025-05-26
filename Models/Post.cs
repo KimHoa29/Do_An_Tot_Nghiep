@@ -61,5 +61,7 @@ namespace Do_An_Tot_Nghiep.Models
         public virtual ICollection<LikePost>? LikePosts { get; set; }
 
         public virtual ICollection<PostMention>? PostMentions { get; set; }
+
+        public virtual ICollection<Save>? Saves { get; set; }
     }
 }

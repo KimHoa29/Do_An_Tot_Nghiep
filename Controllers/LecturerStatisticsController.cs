@@ -17,7 +17,7 @@ namespace Do_An_Tot_Nghiep.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string status = "all")
         {
             // Lấy ID của user đang đăng nhập
             var currentUserId = CurrentUserID;
@@ -78,6 +78,19 @@ namespace Do_An_Tot_Nghiep.Controllers
             }
 
             lecturerStats.PendingPosts = lecturerStats.TotalAssignedPosts - lecturerStats.RespondedPosts;
+
+            // Lọc theo trạng thái
+            if (!string.IsNullOrEmpty(status) && status != "all")
+            {
+                if (status == "responded")
+                {
+                    lecturerStats.PostDetails = lecturerStats.PostDetails.Where(p => p.HasResponded).ToList();
+                }
+                else if (status == "pending")
+                {
+                    lecturerStats.PostDetails = lecturerStats.PostDetails.Where(p => !p.HasResponded).ToList();
+                }
+            }
 
             // Chuyển thành list để giữ nguyên model của view
             var statistics = new List<LecturerPostStatisticsViewModel> { lecturerStats };

@@ -1,0 +1,196 @@
+@using System.Text.RegularExpressions
+@functions{
+    public string StripHtml(string input)
+    {
+        return string.IsNullOrEmpty(input) ? "" : Regex.Replace(input, "<.*?>", string.Empty);
+    }
+}
+
+@model IEnumerable<Do_An_Tot_Nghiep.Models.Save>
+
+@{
+    ViewData["Title"] = "Các mục đã lưu";
+}
+
+<div class="container-fluid mt-4" style="padding-left:0;padding-right:0;">
+    <h2 class="mb-4">Các mục đã lưu</h2>
+
+    <div class="mb-3 d-flex align-items-center gap-2">
+        <label for="filterType" class="form-label mb-0 me-2">Lọc theo loại:</label>
+        <select id="filterType" class="form-select" style="width: 180px; max-width: 100%; display: inline-block;">
+            <option value="all">Tất cả</option>
+            <option value="post">Bài đăng</option>
+            <option value="document">Tài liệu</option>
+            <option value="topic">Chủ đề</option>
+        </select>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">
+            Bạn chưa lưu mục nào.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle" id="savedItemsTable">
+                <thead class="table-primary">
+                    <tr>
+                        <th>Tiêu đề</th>
+                        <th>Loại</th>
+                        <th>Người đăng</th>
+                        <th>Ngày lưu</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var save in Model)
+                {
+                    string typeClass = save.Post != null ? "post" : save.Document != null ? "document" : save.Topic != null ? "topic" : "";
+                    <tr class="item-row" data-type="@typeClass">
+                        <td>
+                            @if (save.Post != null)
+                            {
+                                <i class="fas fa-newspaper text-primary" title="Bài đăng"></i>
+                                <strong>@StripHtml(save.Post.Title)</strong>
+                            }
+                            else if (save.Document != null)
+                            {
+                                <i class="fas fa-file-alt text-success" title="Tài liệu"></i>
+                                <strong>@StripHtml(save.Document.Title)</strong>
+                            }
+                            else if (save.Topic != null)
+                            {
+                                <i class="fas fa-lightbulb text-warning" title="Chủ đề"></i>
+                                <strong>@StripHtml(save.Topic.Title)</strong>
+                            }
+                        </td>
+                        <td>
+                            @if (save.Post != null)
+                            {
+                                <span>Bài đăng</span>
+                            }
+                            else if (save.Document != null)
+                            {
+                                <span>Tài liệu</span>
+                            }
+                            else if (save.Topic != null)
+                            {
+                                <span>Chủ đề</span>
+                            }
+                        </td>
+                        <td>
+                            @if (save.Post != null)
+                            {
+                                @save.Post.User?.Username
+                            }
+                            else if (save.Document != null)
+                            {
+                                @save.Document.User?.Username
+                            }
+                            else if (save.Topic != null)
+                            {
+                                @save.Topic.User?.Username
+                            }
+                        </td>
+                        <td>
+                            @save.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                        </td>
+                        <td>
+                            @if (save.Post != null)
+                            {
+                                <a href="@Url.Action("Details", "Posts", new { id = save.Post.PostId })" class="btn btn-sm btn-outline-primary">Chi tiết</a>
+                            }
+                            else if (save.Document != null)
+                            {
+                                <a href="@Url.Action("Details", "Documents", new { id = save.Document.DocumentId })" class="btn btn-sm btn-outline-success">Chi tiết</a>
+                            }
+                            else if (save.Topic != null)
+                            {
+                                <a href="@Url.Action("Details", "Topics", new { id = save.Topic.TopicId })" class="btn btn-sm btn-outline-warning">Chi tiết</a>
+                            }
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const filter = document.getElementById('filterType');
+        const rows = document.querySelectorAll('#savedItemsTable .item-row');
+        filter.addEventListener('change', function () {
+            const val = this.value;
+            rows.forEach(row => {
+                if (val === 'all' || row.getAttribute('data-type') === val) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
+
+<style>
+    .table-responsive {
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 4px 24px 0 rgba(0,0,0,0.07);
+        background: #fff;
+        width: 100%;
+        margin: 0;
+    }
+    .table {
+        margin-bottom: 0;
+        background: #fff;
+    }
+    .table thead {
+        background: none !important;
+    }
+    .table thead th {
+        font-weight: 600;
+        color: #2d3a4a;
+        border-bottom: 2px solid #e3e8ee;
+        font-size: 1.08rem;
+        background: none !important;
+    }
+    .table tbody tr {
+        transition: background 0.2s;
+    }
+    .table tbody tr:hover {
+        background: #f3f7fa;
+    }
+    .table td, .table th {
+        vertical-align: middle !important;
+        border-color: #e3e8ee;
+        padding: 0.85rem 1rem;
+        background: none;
+    }
+    .table i {
+        font-size: 1.2rem;
+        margin-right: 6px;
+    }
+    .btn-outline-primary, .btn-outline-success, .btn-outline-warning {
+        min-width: 80px;
+        border-radius: 20px;
+        font-weight: 500;
+        transition: box-shadow 0.15s;
+        box-shadow: 0 2px 8px 0 rgba(0,0,0,0.03);
+    }
+    .btn-outline-primary:hover, .btn-outline-success:hover, .btn-outline-warning:hover {
+        box-shadow: 0 4px 16px 0 rgba(0,0,0,0.07);
+    }
+    @@ media (max-width: 900px) {
+        .table-responsive {
+            font-size: 0.98rem;
+        }
+        .table td, .table th {
+            padding: 0.6rem 0.5rem;
+        }
+    }
+</style> 

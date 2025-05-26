@@ -33,6 +33,7 @@ namespace Do_An_Tot_Nghiep.Models
         public DbSet<LikePost> LikePosts { get; set; }
         public DbSet<PostMention> PostMentions { get; set; }
         public DbSet<ChatHistory> ChatHistories { get; set; }
+        public DbSet<Save> Saves { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<User>().ToTable("User");

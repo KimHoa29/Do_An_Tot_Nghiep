@@ -3,115 +3,617 @@
 
 @{
     ViewData["Title"] = "Chi tiết chủ đề";
+    var currentUserId = Context.Session.GetString("UserId");
+    var isOwner = !string.IsNullOrEmpty(currentUserId) && Model.UserId.ToString() == currentUserId;
+    var isLiked = false;
+    if (!string.IsNullOrEmpty(currentUserId) && int.TryParse(currentUserId, out int currentUserIdInt))
+    {
+        isLiked = Model.LikeTopics != null && Model.LikeTopics.Any(lp => lp.UserId == currentUserIdInt);
+    }
+    var likeCount = Model.LikeTopics?.Count ?? 0;
 }
 
-<h2 class="text-center text-primary mt-3 fw-bold animate__animated animate__fadeInDown">📄 Chi tiết chủ đề</h2>
-
-<div class="border p-4 rounded shadow bg-white mt-4 animate__animated animate__fadeIn">
-    <dl class="row">
-        <dt class="col-sm-3 fw-bold text-primary">Tiêu đề:</dt>
-        <dd class="col-sm-9">@Html.Raw(HttpUtility.HtmlDecode(Model.Title))</dd>
-
-        <dt class="col-sm-3 fw-bold">Nội dung:</dt>
-        <dd class="col-sm-9">@Html.Raw(HttpUtility.HtmlDecode(Model.Content))</dd>
-
-        <dt class="col-sm-3 fw-bold">Mức hiển thị:</dt>
-        <dd class="col-sm-9">
+@if (Model != null)
+{
+    <div class="topic-announcement">
+        <!-- Thông tin giảng viên -->
+        <div class="author-info">
+            <img src="@(string.IsNullOrEmpty(Model.User?.Avatar) ? "/css/img/default-avatar.jpg" : Model.User.Avatar)" alt="Avatar" class="avatar" />
+            <div class="author-text">
+                <strong>@Model.User.Username</strong> –
+                <span class="role">
+                    @{
+                        var role = Model.User?.Role;
+                        string roleText = role switch
+                        {
+                            "Lecturer" => "Giảng viên, CVHT",
+                            "Admin" => "Nhân viên",
+                            "Student" => "Sinh viên",
+                            _ => "Người dùng"
+                        };
+                    }
+                    @roleText
+                </span>
+                <br />
                 @{
-                    var type =  Model.VisibilityType?.ToLower();
-                    string label = type switch
+                    var type = Model.VisibilityType?.ToLower();
+                    string icon = type switch
                     {
-                        "public" => "Công khai",
-                        "private" => "Riêng tư",
-                        "group" => "Nhóm",
-                        "custom" => "Tùy chọn",
-                        _ => "Không rõ"
+                        "public" => "🌍",
+                        "private" => "🔒",
+                        "group" => "👥",
+                        "custom" => "⚙️",
+                        _ => "❓"
                     };
-                    @label
                 }
-        </dd>
+                <small>
+                    Cập nhật lúc @Model.UpdatedAt?.ToString("HH:mm, dd/MM/yyyy")
+                    <span class="ms-2">@icon</span>
+                </small>
+            </div>
+        </div>
 
-        <dt class="col-sm-3 fw-bold">Ngày tạo:</dt>
-        <dd class="col-sm-9">@Model.CreatedAt?.ToString("dd/MM/yyyy HH:mm")</dd>
+        <!-- Tiêu đề -->
+        <h2 class="title">@Html.Raw(Model.Title)</h2>
 
-        <dt class="col-sm-3 fw-bold">Ngày cập nhật:</dt>
-        <dd class="col-sm-9">@Model.UpdatedAt?.ToString("dd/MM/yyyy HH:mm")</dd>
+        <!-- Nội dung -->
+        <p class="title" style="font-size: 16px; color: #555;">@Html.Raw(Model.Content)</p>
 
-        <dt class="col-sm-3 fw-bold">Ảnh minh họa:</dt>
-        <dd class="col-sm-9">
+        <!-- Ảnh đính kèm -->
             @if (!string.IsNullOrEmpty(Model.ImageUrl))
             {
-                <img src="@Model.ImageUrl" alt="Ảnh minh họa" class="img-fluid rounded shadow-sm" style="max-width: 300px;" />
+            <div class="timetable-image">
+                <img src="@Url.Content(Model.ImageUrl)" alt="Ảnh đính kèm" />
+            </div>
             }
-            else
-            {
-                <span class="text-muted">Không có ảnh</span>
-            }
-        </dd>
 
-        <dt class="col-sm-3 fw-bold">Tài liệu đính kèm:</dt>
-        <dd class="col-sm-9">
+        <!-- File đính kèm -->
             @if (!string.IsNullOrEmpty(Model.FileUrl))
             {
-                var fileName = System.IO.Path.GetFileName(Model.FileUrl);
-                <a href="@Model.FileUrl" download class="text-decoration-underline text-primary">@fileName</a>
-            }
-            else
-            {
-                <span class="text-muted">Không có tệp đính kèm</span>
-            }
-        </dd>
-        
-        <dd><strong>Thẻ:</strong>
-            @if (Model.TopicTags != null && Model.TopicTags.Any())
-            {
-                foreach (var tag in Model.TopicTags.Select(tt => tt.Tag))
-                {
-                    <span class="badge bg-primary me-1">@tag.Name</span>
-                }
-            }
-            else
-            {
-                <span>Không có tag</span>
-            }
-        </dd>
-        <dt class="col-sm-3 fw-bold">Người tạo:</dt>
-        <dd class="col-sm-9">@Model.User?.Username</dd>
-    </dl>
+            <div class="attachment">
+                <a href="@Model.FileUrl" target="_blank" class="attachment-link">
+                    <i class="fas fa-file-pdf attachment-icon"></i>
+                    <span class="attachment-name">@System.IO.Path.GetFileName(Model.FileUrl)</span>
+                </a>
+            </div>
+        }
 
-    <div class="text-center mt-4 animate__animated animate__fadeInUp">
-        <a asp-action="Edit" asp-route-id="@Model?.TopicId" class="btn btn-warning px-4 shadow">✏ Sửa</a>
-        <a asp-action="Index" class="btn btn-secondary px-4 ms-2 shadow">🔙 Quay lại</a>
+        <!-- Thẻ tag -->
+        <div class="tags">
+            @foreach (var tag in Model.TopicTags)
+            {
+                <span class="badge bg-secondary me-1">@tag.Tag?.Name</span>
+            }
+        </div>
+
+        <!-- Nút phản hồi và like -->
+        <div class="actions mt-3">
+            <button class="action-btn like-btn @(isLiked ? "liked" : "")" onclick="toggleTopicLike('@Model.TopicId')" data-topic-id="@Model.TopicId">
+                <i class="fas fa-heart"></i>
+                <span class="count-number">@likeCount</span>
+            </button>
+            <button class="action-btn comment-btn" type="button" onclick="toggleCommentBlock('@Model.TopicId')">
+                <i class="fas fa-comment"></i>
+                <span class="count-number">@(Model.Comments?.Count ?? 0)</span>
+            </button>
+        </div>
+
+        <!-- Khối comment -->
+        <div class="comment-block mt-3" id="comment-block-@Model.TopicId" style="display: none;">
+            <!-- Form bình luận chính -->
+            <div class="comment-form">
+                <form id="commentForm-@Model.TopicId" onsubmit="submitTopicComment(event, @Model.TopicId)">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-2">
+                        <textarea id="commentContent-@Model.TopicId" class="form-control" placeholder="Viết bình luận..." rows="3" required></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <input type="file" id="commentImage-@Model.TopicId" class="form-control" accept="image/*" />
+                    </div>
+                    <button type="submit" class="btn btn-purple">Gửi bình luận</button>
+                </form>
+            </div>
+
+            <!-- Danh sách bình luận -->
+            @if (Model.Comments != null && Model.Comments.Any())
+            {
+                <div class="comments-list mb-3" id="comments-list-@Model.TopicId">
+                    @foreach (var comment in Model.Comments.Where(c => c.ParentCommentId == null).OrderByDescending(c => c.CreatedAt))
+                {
+                        <div class="comment-item d-flex mb-3" id="comment-@comment.CommentId">
+                            <img src="@(string.IsNullOrEmpty(comment.User?.Avatar) ? "/css/img/default-avatar.jpg" : comment.User.Avatar)" alt="Avatar" class="comment-avatar me-2" />
+                            <div class="comment-body">
+                                <div class="comment-header d-flex justify-content-between">
+                                    <div>
+                                        <strong class="text-primary">
+                                            @comment.User?.Username –
+                                            @{
+                                                var r = comment.User?.Role;
+                                                string roleDisplayText = r switch
+                                                {
+                                                    "Lecturer" => "Giảng viên, CVHT",
+                                                    "Admin" => "Nhân viên",
+                                                    "Student" => "Sinh viên",
+                                                    _ => "Người dùng"
+                                                };
+                                            }
+                                            <span class="role">@roleDisplayText</span>
+                                        </strong>
+                                    </div>
+                                    <small class="text-muted">@comment.CreatedAt.ToString("HH:mm, dd/MM/yyyy")</small>
+                                </div>
+                                <div class="comment-content">
+                                    @Html.Raw(comment.Content)
+                                    @if (!string.IsNullOrEmpty(comment.ImageUrl))
+                                    {
+                                        <div class="comment-image">
+                                            <img src="@comment.ImageUrl" alt="Ảnh bình luận" />
+                                        </div>
+            }
+                                </div>
+
+                                <div class="comment-actions">
+                                    <button class="custom-reply-btn" onclick="toggleReplyForm('@comment.CommentId')">
+                                        <i class="fas fa-reply"></i> Trả lời
+                                    </button>
+                                </div>
+
+                                <!-- Form bình luận trả lời (cho comment cha) -->
+                                <div class="reply-form mt-2" id="reply-form-@comment.CommentId" style="display: none;">
+                                    <form class="nested-reply-form" onsubmit="submitTopicReply(event, @comment.CommentId)" enctype="multipart/form-data">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="ParentCommentId" value="@comment.CommentId" />
+                                        <input type="hidden" name="TopicId" value="@Model.TopicId" />
+                                        <div class="mb-2">
+                                            <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                                        </div>
+                                        <div class="mb-2">
+                                            <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                                        </div>
+                                        <div class="d-flex justify-content-end">
+                                            <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@comment.CommentId')">Hủy</button>
+                                            <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                <!-- Phần replies -->
+                                <div class="nested-replies" id="replies-@comment.CommentId">
+                                    @if (comment.Replies != null && comment.Replies.Any())
+                                    {
+                                        @foreach (var reply in comment.Replies.OrderBy(r => r.CreatedAt))
+                                        {
+                                            <div class="reply-item" id="reply-@reply.CommentId">
+                                                <div class="reply-line"></div>
+                                                <div class="d-flex">
+                                                    <img src="@(string.IsNullOrEmpty(reply.User?.Avatar) ? "/css/img/default-avatar.jpg" : reply.User.Avatar)" alt="Avatar" class="reply-avatar" />
+                                                    <div class="reply-content">
+                                                        <div class="reply-header">
+                                                            <strong class="reply-username">
+                                                                @reply.User?.Username –
+                                                                @{
+                                                                    var replyRole = reply.User?.Role;
+                                                                    string replyRoleText = replyRole switch
+                                                                    {
+                                                                        "Lecturer" => "Giảng viên, CVHT",
+                                                                        "Admin" => "Nhân viên",
+                                                                        "Student" => "Sinh viên",
+                                                                        _ => "Người dùng"
+                                                                    };
+                                                                }
+                                                                <span class="role">@replyRoleText</span>
+                                                            </strong>
+                                                            <small class="reply-time">@reply.CreatedAt.ToString("HH:mm, dd/MM/yyyy")</small>
+                                                        </div>
+                                                        <div class="reply-text">
+                                                            @Html.Raw(reply.Content)
+                                                            @if (!string.IsNullOrEmpty(reply.ImageUrl))
+                                                            {
+                                                                <div class="reply-image">
+                                                                    <img src="@reply.ImageUrl" alt="Ảnh phản hồi" />
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                        <div class="reply-actions">
+                                                            <button class="custom-reply-btn" onclick="toggleReplyForm('@reply.CommentId')">
+                                                                <i class="fas fa-reply"></i> Trả lời
+                                                            </button>
+                                                        </div>
+
+                                                        <!-- Form trả lời cho reply (lồng nhau) -->
+                                                        <div class="reply-form mt-2" id="reply-form-@reply.CommentId" style="display: none;">
+                                                            <form class="nested-reply-form" onsubmit="submitTopicReply(event, @reply.CommentId)" enctype="multipart/form-data">
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="ParentCommentId" value="@reply.CommentId" />
+                                                                <input type="hidden" name="TopicId" value="@Model.TopicId" />
+                                                                <div class="mb-2">
+                                                                    <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                                                                </div>
+                                                                <div class="mb-2">
+                                                                    <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                                                                </div>
+                                                                <div class="d-flex justify-content-end">
+                                                                    <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@reply.CommentId')">Hủy</button>
+                                                                    <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                        <div class="nested-replies" id="replies-@reply.CommentId"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
     </div>
-</div>
+}
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
     <script src="~/js/comment.js"></script>
+    <script>
+        function toggleCommentBlock(topicId) {
+            const block = document.getElementById(`comment-block-${topicId}`);
+            const wasHidden = block.style.display === 'none';
+            block.style.display = wasHidden ? 'block' : 'none';
+
+            if (wasHidden) {
+                const textarea = block.querySelector('textarea');
+                if (textarea) textarea.focus();
+            }
+        }
+
+        function toggleReplyForm(commentId) {
+            var form = document.getElementById('reply-form-' + commentId);
+            if (form) {
+                form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
+                if (form.style.display === 'block') {
+                    var textarea = form.querySelector('textarea');
+                    if (textarea) textarea.focus();
+                }
+            }
+        }
+
+        function toggleTopicLike(topicId) {
+            const likeBtn = document.querySelector(`.like-btn[data-topic-id="${topicId}"]`);
+            const likeCountSpan = likeBtn.querySelector('.count-number');
+
+            fetch(`/Topics/ToggleLike/${topicId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.isLiked) {
+                        likeBtn.classList.add('liked');
+                    } else {
+                        likeBtn.classList.remove('liked');
+                    }
+                    likeCountSpan.textContent = data.likeCount;
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi thực hiện thao tác. Vui lòng thử lại sau.');
+            });
+        }
+
+        async function submitTopicComment(event, topicId) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenInput ? tokenInput.value : '';
+            try {
+                const response = await fetch('/Comments/Create', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'RequestVerificationToken': token
+                    }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    const commentsList = document.getElementById('comments-list-' + topicId);
+                    if (commentsList) {
+                        commentsList.insertAdjacentHTML('afterbegin', createTopicCommentElement(result.comment, topicId));
+                    }
+                    form.reset();
+                } else {
+                    alert(result.message || 'Có lỗi xảy ra khi thêm bình luận');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi thêm bình luận');
+            }
+        }
+
+        async function submitTopicReply(event, parentCommentId) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            const topicId = form.querySelector('input[name="TopicId"]').value;
+            const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenInput ? tokenInput.value : '';
+            try {
+                const response = await fetch('/Comments/CreateResponse', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'RequestVerificationToken': token
+                    }
+                });
+                const result = await response.json();
+                if (result.success) {
+                    let repliesContainer = document.getElementById('replies-' + parentCommentId);
+                    if (!repliesContainer) {
+                        const parentElement = document.getElementById('reply-' + parentCommentId) || document.getElementById('comment-' + parentCommentId);
+                        if (parentElement) {
+                            const replyContent = parentElement.querySelector('.reply-content') || parentElement.querySelector('.comment-body');
+                            if (replyContent) {
+                                repliesContainer = document.createElement('div');
+                                repliesContainer.className = 'nested-replies';
+                                repliesContainer.id = 'replies-' + parentCommentId;
+                                replyContent.appendChild(repliesContainer);
+                            }
+                        }
+                    }
+                    // Xác định cấp độ reply
+                    let level = 1;
+                    const parentReply = document.getElementById('reply-' + parentCommentId);
+                    if (parentReply) {
+                        level = 2;
+                    }
+                    if (repliesContainer) {
+                        repliesContainer.insertAdjacentHTML('beforeend', createTopicReplyElement(result.reply, topicId, level));
+                    }
+                    form.reset();
+                    toggleReplyForm(parentCommentId);
+                } else {
+                    alert(result.message || 'Có lỗi xảy ra khi thêm phản hồi');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi thêm phản hồi');
+            }
+        }
+    </script>
 }
 
-<!-- Comment form -->
-<div class="comment-section mt-4">
-    <h4>Bình luận (<span class="comment-count">@Model.Comments.Count</span>)</h4>
-    <form asp-controller="Comments" asp-action="Create" method="post" enctype="multipart/form-data" class="comment-form">
-        <input type="hidden" name="TopicId" value="@Model.TopicId" />
-        <div class="form-group">
-            <textarea name="Content" class="form-control" rows="3" placeholder="Viết bình luận..." required></textarea>
-        </div>
-        <div class="form-group mt-2">
-            <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
-            <div class="image-preview"></div>
-        </div>
-        <div class="form-group mt-2">
-            <button type="submit" class="btn btn-primary">Gửi bình luận</button>
-        </div>
-    </form>
-
-    <!-- Comments list -->
-    <div class="comments-list mt-4">
-        @foreach (var comment in Model.Comments.OrderByDescending(c => c.CreatedAt))
-        {
-            <partial name="_CommentPartial" model="comment" />
+<style>
+    .topic-announcement {
+        border: 1px solid #eee;
+        padding: 20px;
+        border-radius: 12px;
+        background-color: #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        margin-bottom: 20px;
+        font-family: 'Segoe UI', sans-serif;
+    }
+    .author-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    .avatar {
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        margin-right: 15px;
+        border: 2px solid #f0f0f0;
+    }
+    .author-text {
+        font-size: 0.95rem;
+        color: #333;
+    }
+    .role {
+        color: #c300c3;
+        font-weight: 600;
+    }
+    .title {
+        font-size: 20px;
+        color: #2c3e50;
+        margin-bottom: 5px;
+    }
+    .custom-reply-btn {
+        font-size: 0.85rem;
+        color: #800080;
+        padding: 4px 10px;
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+    }
+    .custom-reply-btn:hover {
+        text-decoration: underline;
+        color: #a000a0;
+    }
+    .timetable-image {
+        text-align: center;
+        margin-top: 15px;
+    }
+    .timetable-image img {
+        max-width: 80%;
+        max-height: 300px;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    .comment-item {
+        display: flex;
+        margin-bottom: 12px;
+        align-items: flex-start;
+    }
+    .comment-body {
+        flex: 1;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .comment-avatar {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        margin-right: 15px;
+    }
+    .comment-content {
+        margin: 8px 0;
+        font-size: 0.95rem;
+        color: #333;
+        padding: 8px 12px;
+        background-color: #fff;
+        border-radius: 12px;
+    }
+    .reply-form textarea {
+        width: 100%;
+        border-radius: 8px;
+        padding: 8px;
+        font-size: 0.9rem;
+        border: 1px solid #ccc;
+        box-sizing: border-box;
+    }
+    .actions {
+        display: flex;
+        gap: 15px;
+        padding: 8px 0;
+        border-top: 1px solid #eee;
+        margin-top: 15px;
+    }
+    .action-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border: none;
+        background: transparent;
+        border-radius: 20px;
+        color: #65676b;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .action-btn:hover {
+        background-color: #f0f2f5;
+    }
+    .action-btn i {
+        font-size: 18px;
+    }
+    .like-btn.liked {
+        color: #e0245e;
+    }
+    .like-btn.liked i {
+        animation: likeAnimation 0.3s ease;
+    }
+    .comment-btn:hover {
+        color: #1877f2;
+    }
+    .count-number {
+        font-size: 14px;
+        font-weight: 500;
+    }
+    @@keyframes likeAnimation {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+    .nested-replies {
+        margin-left: 45px;
+        position: relative;
+        padding-left: 2px;
+    }
+    .reply-item {
+        position: relative;
+        margin-top: 12px;
+        padding-left: 16px;
+    }
+    .reply-line {
+        position: absolute;
+        left: -20px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #e0e0e0;
+    }
+    .reply-line:before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 20px;
+        width: 16px;
+        height: 2px;
+        background-color: #e0e0e0;
+    }
+    .reply-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+    .reply-content {
+        flex: 1;
+        background-color: #fff;
+        padding: 12px;
+        border-radius: 12px;
+        position: relative;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .reply-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+    .reply-text {
+        margin: 8px 0;
+        font-size: 0.95rem;
+        color: #333;
+        padding: 8px 12px;
+        background-color: #fff;
+        border-radius: 12px;
+    }
+    .nested-reply-form {
+        margin-top: 8px;
+        background-color: #f0f2f5;
+        padding: 8px 12px;
+        border-radius: 8px;
+    }
+    .nested-reply-form textarea {
+        background-color: #fff;
+        border: 1px solid #ccd0d5;
+        border-radius: 6px;
+        padding: 8px 12px;
+    }
+    .comment-image img,
+    .reply-image img {
+        max-width: 300px;
+        border-radius: 8px;
+        margin-top: 8px;
+        border: 1px solid #dadde1;
+    }
+    .role {
+        color: #65676b;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    .reply-time, .text-muted {
+        color: #65676b !important;
+        font-size: 0.85rem;
+    }
+    .reply-header strong, .comment-header strong {
+        font-size: 0.95rem;
+        color: #050505;
         }
-    </div>
-</div>
+</style>
