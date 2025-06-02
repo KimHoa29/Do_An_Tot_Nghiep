@@ -29,6 +29,12 @@ namespace Do_An_Tot_Nghiep.Controllers
                 .Include(c => c.Replies) // comment con
                     .ThenInclude(r => r.User);
 
+            // Nếu không phải admin thì chỉ lấy bình luận của người dùng hiện tại
+            if (CurrentUserRole != "Admin")
+            {
+                commentsQuery = commentsQuery.Where(c => c.UserId.ToString() == CurrentUserID);
+            }
+
             // Áp dụng tìm kiếm nếu có
             if (!string.IsNullOrEmpty(searchString))
             {
@@ -48,6 +54,7 @@ namespace Do_An_Tot_Nghiep.Controllers
             var allReplies = await _context.Comments
                 .Include(c => c.User)
                 .Where(c => c.ParentCommentId != null)
+                .Where(c => CurrentUserRole == "Admin" || c.UserId.ToString() == CurrentUserID) // Admin xem được tất cả replies, user thường chỉ xem được của mình
                 .OrderBy(c => c.CreatedAt)
                 .ToListAsync();
 

@@ -39,28 +39,16 @@ namespace Do_An_Tot_Nghiep.Controllers
                     .ThenInclude(c => c.User)
                 .AsQueryable();
 
+            // Nếu không phải admin thì chỉ lấy chủ đề của người dùng hiện tại
+            if (CurrentUserRole != "Admin")
+            {
+                query = query.Where(t => t.UserId.ToString() == CurrentUserID);
+            }
+
             // Tìm kiếm
             if (!string.IsNullOrEmpty(searchString))
             {
                 query = query.Where(t => t.Title.Contains(searchString) || t.Content.Contains(searchString));
-            }
-
-            // Lấy danh sách các nhóm mà người dùng thuộc về
-            var userGroupIds = _context.GroupUsers
-                .Where(gu => gu.UserId.ToString() == CurrentUserID)
-                .Select(gu => gu.GroupId)
-                .ToList();
-
-            // Lọc quyền truy cập
-            if (CurrentUserRole != "Admin")
-            {
-                query = query.Where(t =>
-                    t.UserId.ToString() == CurrentUserID ||
-                    t.VisibilityType == "public" ||
-                    (t.VisibilityType == "private" && t.UserId.ToString() == CurrentUserID) ||
-                    (t.VisibilityType == "group" && t.TopicGroups.Any(g => userGroupIds.Contains(g.GroupId))) ||
-                    (t.VisibilityType == "custom" && t.TopicUsers.Any(u => u.UserId.ToString() == CurrentUserID))
-                );
             }
 
             var result = await query.ToListAsync();

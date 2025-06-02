@@ -49,6 +49,7 @@ namespace Do_An_Tot_Nghiep.Models
         public virtual ICollection<LikePost>? LikePosts { get; set; }
         public virtual ICollection<LikeTopic>? LikeTopics { get; set; }
         public virtual ICollection<LikeDocument>? LikeDocuments { get; set; }
+        public virtual Student? Student { get; set; }
 
     }
 }

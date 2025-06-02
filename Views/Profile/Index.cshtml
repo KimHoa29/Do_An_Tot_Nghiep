@@ -1,0 +1,424 @@
+@{
+    var user = ViewBag.User as Do_An_Tot_Nghiep.Models.User;
+    var topics = ViewBag.Topics as IEnumerable<Do_An_Tot_Nghiep.Models.Topic>;
+    var posts = ViewBag.Posts as IEnumerable<Do_An_Tot_Nghiep.Models.Post>;
+    ViewData["Title"] = $"{user.Username} - Trang cá nhân";
+}
+
+<div class="profile-container">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-cover">
+            <div class="cover-bg"></div>
+        </div>
+        <div class="profile-info">
+            <div class="profile-avatar">
+                <img src="@(string.IsNullOrEmpty(user.Avatar) ? "/css/img/default-avatar.jpg" : user.Avatar)" alt="Avatar" />
+            </div>
+            <div class="profile-details">
+                <div class="profile-name-container">
+                    <h1 class="profile-name">@user.Username</h1>
+                    @if (user.UserId.ToString() == ViewBag.CurrentUserId && user.Student != null)
+                    {
+                        <a href="/Students/Edit/@user.Student.StudentId" class="edit-profile-link" title="Chỉnh sửa thông tin">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    }
+                </div>
+                <p class="profile-role">
+                    @{
+                        var role = user.Role;
+                        string roleText = role switch
+                        {
+                            "Lecturer" => "Giảng viên, CVHT",
+                            "Admin" => "Nhân viên",
+                            "Student" => "Sinh viên",
+                            _ => "Người dùng"
+                        };
+                    }
+                    @roleText
+                </p>
+                <p class="profile-email">@user.Email</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="profile-content">
+        <nav class="tab-container">
+            <button class="tab active" data-tab="Topics">
+                <i class="fas fa-folder"></i> Chủ đề
+            </button>
+            <button class="tab" data-tab="Posts">
+                <i class="fas fa-comments"></i> Góc cố vấn
+            </button>
+        </nav>
+
+        <div class="tab-content-wrapper">
+            <!-- Topics Tab -->
+            <div id="Topics" class="tab-content active">
+                <div class="content-container">
+                    <div style="margin-bottom: 1.5rem;">
+                        @if (user.UserId.ToString() == ViewBag.CurrentUserId)
+                        {
+                            <a href="/Topics/Create" class="btn-dainam-orange">
+                                <i class="fas fa-plus"></i> Tạo chủ đề
+                            </a>
+                        }
+                    </div>
+                    <div class="topic-container">
+                        @if (topics != null && topics.Any())
+                        {
+                            foreach (var topic in topics)
+                            {
+                                @await Html.PartialAsync("_Topic", topic)
+                            }
+                        }
+                        else
+                        {
+                            <p class="no-content">Chưa có chủ đề nào.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Posts Tab -->
+            <div id="Posts" class="tab-content">
+                <div class="content-container">
+                    <div style="margin-bottom: 1.5rem;">
+                        @if (user.UserId.ToString() == ViewBag.CurrentUserId)
+                        {
+                            <a href="/Posts/Create" class="btn-dainam-orange">
+                                <i class="fas fa-question-circle"></i> Gửi câu hỏi
+                            </a>
+                        }
+                    </div>
+                    <div class="post-container">
+                        @if (posts != null && posts.Any())
+                        {
+                            foreach (var post in posts)
+                            {
+                                @await Html.PartialAsync("_Post", post)
+                            }
+                        }
+                        else
+                        {
+                            <p class="no-content">Chưa có bài viết nào.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .profile-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .profile-header {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        overflow: hidden;
+    }
+
+    .profile-cover {
+        height: 200px;
+        overflow: hidden;
+        position: relative;
+        background-color: #f5f5f5;
+    }
+
+    .cover-bg {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #e0e0e0, #f5f5f5);
+    }
+
+    .profile-info {
+        padding: 20px;
+        position: relative;
+        margin-top: -60px;
+    }
+
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        border: 4px solid #fff;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .profile-details {
+        margin-top: 20px;
+    }
+
+    .profile-name {
+        font-size: 24px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0;
+    }
+
+    .profile-role {
+        color: #9c27b0;
+        font-weight: 500;
+        margin: 5px 0;
+    }
+
+    .profile-email {
+        color: #666;
+        margin: 5px 0;
+    }
+
+    .profile-content {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+
+    .tab-container {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #e0e0e0;
+        padding: 0;
+    }
+
+    .tab {
+        padding: 1rem 2rem;
+        border: none;
+        background: none;
+        font-size: 1.1rem;
+        color: #666;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .tab:hover {
+        color: #9c27b0;
+    }
+
+    .tab.active {
+        color: #9c27b0;
+        border-bottom: 3px solid #9c27b0;
+    }
+
+    .tab i {
+        margin-right: 0.5rem;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .content-container {
+        padding: 1rem 0;
+    }
+
+    .no-content {
+        text-align: center;
+        color: #666;
+        font-style: italic;
+        padding: 2rem;
+    }
+
+    .btn-dainam-orange {
+        background: linear-gradient(135deg, #FFA726, #FFCC80);
+        color: white;
+        font-weight: bold;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-dainam-orange:hover {
+        background: linear-gradient(135deg, #FB8C00, #FFB74D);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-dainam-orange i {
+        font-size: 1.1rem;
+    }
+
+    .profile-name-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .edit-profile-link {
+        color: #9c27b0;
+        font-size: 1.2rem;
+        transition: all 0.3s ease;
+        opacity: 0.7;
+    }
+
+    .edit-profile-link:hover {
+        color: #7b1fa2;
+        opacity: 1;
+        transform: scale(1.1);
+    }
+</style>
+
+<script>
+    function showTab(element) {
+        // Remove active class from all tabs and contents
+        document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(content => content.classList.remove("active"));
+        
+        // Add active class to clicked tab and corresponding content
+        element.classList.add("active");
+        const tabId = element.getAttribute("data-tab");
+        document.getElementById(tabId).classList.add("active");
+        
+        // Save selected tab to localStorage
+        localStorage.setItem("selectedProfileTab", tabId);
+    }
+
+    // Add click event listeners to tabs
+    document.querySelectorAll(".tab").forEach(tab => {
+        tab.addEventListener("click", function() {
+            showTab(this);
+        });
+    });
+
+    // Restore selected tab on page load
+    window.addEventListener("load", function() {
+        const selectedTab = localStorage.getItem("selectedProfileTab") || "Topics";
+        const tabElement = document.querySelector(`.tab[data-tab="${selectedTab}"]`);
+        if (tabElement) {
+            showTab(tabElement);
+        }
+    });
+
+    // Infinite scroll cho Topics
+    let isLoadingTopic = false;
+    let skipTopic = 4;
+
+    function loadMoreTopics() {
+        if (isLoadingTopic) return;
+        isLoadingTopic = true;
+
+        const userId = @user.UserId;
+        fetch(`/Profile/LoadMoreTopics?userId=${userId}&skip=${skipTopic}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const container = document.querySelector('.topic-container');
+                    if (container) {
+                        container.insertAdjacentHTML('beforeend', data.html);
+                        skipTopic += 4;
+                    }
+                } else if (data.message === "No more topics") {
+                    window.removeEventListener('scroll', handleScrollTopic);
+                }
+                isLoadingTopic = false;
+            })
+            .catch(error => {
+                console.error('Error loading more topics:', error);
+                isLoadingTopic = false;
+            });
+    }
+
+    function handleScrollTopic() {
+        const tab = document.querySelector('.tab.active');
+        if (!tab || tab.getAttribute('data-tab') !== 'Topics') return;
+
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+            loadMoreTopics();
+        }
+    }
+
+    // Infinite scroll cho Posts
+    let isLoadingPost = false;
+    let skipPost = 4;
+
+    function loadMorePosts() {
+        if (isLoadingPost) return;
+        isLoadingPost = true;
+
+        const userId = @user.UserId;
+        fetch(`/Profile/LoadMorePosts?userId=${userId}&skip=${skipPost}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const container = document.querySelector('.post-container');
+                    if (container) {
+                        container.insertAdjacentHTML('beforeend', data.html);
+                        skipPost += 4;
+                    }
+                } else if (data.message === "No more posts") {
+                    window.removeEventListener('scroll', handleScrollPost);
+                }
+                isLoadingPost = false;
+            })
+            .catch(error => {
+                console.error('Error loading more posts:', error);
+                isLoadingPost = false;
+            });
+    }
+
+    function handleScrollPost() {
+        const tab = document.querySelector('.tab.active');
+        if (!tab || tab.getAttribute('data-tab') !== 'Posts') return;
+
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+            loadMorePosts();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('scroll', handleScrollTopic);
+        window.addEventListener('scroll', handleScrollPost);
+    });
+</script>
+
+<!-- Thêm tham chiếu đến file topic.js -->
+<script src="~/js/topic.js"></script>
+
+<!-- Modal xóa topic -->
+<div class="modal fade" id="deleteTopicModal" tabindex="-1" aria-labelledby="deleteTopicModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteTopicModalLabel">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc chắn muốn xóa chủ đề này không?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteTopicBtn">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div> 
