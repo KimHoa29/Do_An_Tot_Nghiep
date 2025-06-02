@@ -15,6 +15,10 @@ namespace Do_An_Tot_Nghiep.Controllers
 
         public async Task<IActionResult> Index(int page = 1, string searchTerm = null)
         {
+            if (!IsLogin || CurrentUserRole != "Admin")
+            {
+                return RedirectToAction("Login", "Account");
+            }
             var statistics = await _geminiService.GetChatStatisticsAsync(page, 10, searchTerm);
             return View(statistics);
         }

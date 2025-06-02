@@ -106,10 +106,26 @@
             // Khởi tạo TinyMCE cho các trường Tiêu đề và Nội dung
             tinymce.init({
                     selector: '#Title, #Content',
-                plugins: 'advlist autolink lists link image charmap print preview anchor help',
-                toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image | help',
+                plugins: 'advlist autolink lists link image charmap print preview anchor help media code',
+                toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image media code | help',
                 menubar: false,
-                entity_encoding: 'raw'  // Sử dụng raw để lưu HTML mà không mã hóa các ký tự
+                entity_encoding: 'raw',  // Sử dụng raw để lưu HTML mà không mã hóa các ký tự
+                branding: false, // Thêm dòng này để ẩn logo TinyMCE
+                height: 120, // Giảm chiều cao editor xuống một nửa
+                media_url_resolver: function (data, resolve) {
+                    var url = data.url;
+                    var youtubeMatch = url.match(/^https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/);
+                    if (youtubeMatch) {
+                        var embedUrl = 'https://www.youtube.com/embed/' + youtubeMatch[1];
+                        resolve({ html: '<iframe src="' + embedUrl + '" width="560" height="315" frameborder="0" allowfullscreen></iframe>' });
+                        return;
+                    }
+                    // Nếu không phải YouTube, xử lý mặc định
+                    resolve({ html: '<iframe src="' + url + '" width="560" height="315" frameborder="0" allowfullscreen></iframe>' });
+                },
+                media_alt_source: false,
+                media_poster: false,
+                media_dimensions: false
         });
 
         // Validate loại hiển thị

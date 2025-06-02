@@ -72,7 +72,7 @@
             </select>
         </div>
         <div class="col-md-4">
-            <button type="submit" class="btn btn-primary">Lọc</button>
+            <button type="submit" class="btn btn-filter-custom">Lọc</button>
         </div>
     </form>
 
@@ -196,5 +196,22 @@
 
     .fw-semibold {
         font-weight: 600;
+    }
+
+    .btn-filter-custom {
+        background-color: #F07C18 !important;
+        color: #fff !important;
+        border: none;
+        border-radius: 6px !important;
+        padding: 6px 22px !important;
+        font-size: 1rem !important;
+        min-width: 80px;
+        font-weight: 500;
+        box-shadow: 0 2px 8px rgba(240,124,24,0.08);
+        transition: background 0.2s;
+    }
+    .btn-filter-custom:hover, .btn-filter-custom:focus {
+        background-color: #d96a0c !important;
+        color: #fff !important;
     }
 </style>

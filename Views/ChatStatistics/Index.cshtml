@@ -59,7 +59,7 @@
                 <input type="text" name="searchTerm" class="form-control form-control-lg px-3" style="border-radius:8px;" placeholder="Tìm kiếm người dùng, câu hỏi, câu trả lời..." value="@Model.SearchTerm" />
             </div>
             <div class="col-auto">
-                <button class="btn btn-primary btn-lg px-3 shadow-sm" style="border-radius:8px;" type="submit">
+                <button class="btn btn-search-custom" type="submit">
                     <i class="bi bi-search"></i> Tìm kiếm
                 </button>
             </div>
@@ -177,4 +177,23 @@
     .g-3 { --bs-gutter-x: 1rem; }
     .g-2 { --bs-gutter-x: 0.7rem; }
     h1, h5 { margin-bottom: 0.5rem; }
+    .btn-search-custom {
+        background-color: #F07C18 !important;
+        color: #fff !important;
+        border: none;
+        border-radius: 6px !important;
+        padding: 4px 16px !important;
+        font-size: 0.95rem !important;
+        min-width: 80px;
+        box-shadow: 0 2px 8px rgba(240,124,24,0.08);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 500;
+        transition: background 0.2s;
+    }
+    .btn-search-custom:hover, .btn-search-custom:focus {
+        background-color: #d96a0c !important;
+        color: #fff !important;
+    }
 </style> 
