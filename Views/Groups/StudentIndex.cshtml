@@ -1,0 +1,668 @@
+@model IEnumerable<Do_An_Tot_Nghiep.Models.Group>
+
+@{
+    ViewData["Title"] = "Quản lý nhóm của tôi";
+}
+
+<head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+    <link href="~/css/index.css" rel="stylesheet" />
+</head>
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h2 class="display-6 fw-bold text-primary mb-0">
+            <i class="fas fa-users-cog me-2"></i>Quản lý nhóm của tôi
+        </h2>
+        <a asp-action="Create" class="btn btn-create-group ms-2 px-4 py-2 rounded-pill shadow-sm">
+            <i class="fas fa-plus-circle me-2"></i>Tạo nhóm mới
+        </a>
+    </div>
+
+    <!-- Thanh tìm kiếm tối giản -->
+    <div class="card border-0 mb-5 rounded-4" style="box-shadow:none;">
+        <div class="card-body p-4">
+            <form asp-controller="Groups" asp-action="StudentIndex" method="get" class="d-flex align-items-center w-100 minimal-search-form">
+                <div class="input-group input-group-lg flex-grow-1 minimal-search-group">
+                    <span class="input-group-text minimal-search-icon">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" name="searchString" class="form-control minimal-search-input" 
+                           placeholder="Tìm kiếm theo tên hoặc mô tả nhóm..." 
+                           value="@ViewBag.SearchString" />
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info rounded-4 text-center p-4">
+            <i class="fas fa-info-circle me-2"></i>Bạn chưa tham gia nhóm nào.
+        </div>
+    }
+    else
+    {
+        var currentUserId = ViewBag.CurrentUserId;
+        int currentUserIdInt = -1;
+        if (!string.IsNullOrEmpty(currentUserId))
+        {
+            int.TryParse(currentUserId, out currentUserIdInt);
+        }
+
+        <!-- Nhóm của tôi -->
+        <div class="card border-0 shadow-sm mb-5 rounded-4">
+            <div class="card-header bg-white border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-primary">
+                        <i class="fas fa-crown me-2"></i>Nhóm của tôi
+                    </h5>
+                    <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                        @Model.Count(g => g.CreatorUserId == currentUserIdInt) nhóm
+                    </span>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                @{
+                    var myGroups = ViewBag.MyGroups as List<Do_An_Tot_Nghiep.Models.Group>;
+                }
+                @if (!myGroups.Any())
+                {
+                    <div class="alert alert-info rounded-4">
+                        <i class="fas fa-info-circle me-2"></i>Bạn chưa tạo nhóm nào.
+                    </div>
+                }
+                else
+                {
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                        @foreach (var group in myGroups)
+                        {
+                            <div class="col">
+                                <div class="card h-100 border-0 shadow-sm rounded-4 group-card position-relative">
+                                    <div class="card-header bg-white border-0 p-4 d-flex justify-content-between align-items-start">
+                                        <h5 class="card-title text-primary fw-bold mb-0">
+                                            <i class="fas fa-users me-2"></i>
+                                            <a href="@Url.Action("Details", new { id = group.GroupId })" class="group-link text-primary text-decoration-none">@group.GroupName</a>
+                                        </h5>
+                                        <div class="dropdown">
+                                            <button class="btn btn-link text-secondary p-0" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <a class="dropdown-item" asp-action="Edit" asp-route-id="@group.GroupId">
+                                                        <i class="fas fa-edit me-2"></i>Sửa
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger delete-group-btn" href="#" data-group-id="@group.GroupId">
+                                                        <i class="fas fa-trash-alt me-2"></i>Xóa
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="card-body p-4">
+                                        <p class="card-text text-muted">@group.Description</p>
+                                        <div class="d-flex justify-content-between align-items-center mt-3">
+                                            <small class="text-muted">
+                                                <i class="fas fa-users me-1"></i> @(group.GroupUsers?.Count ?? 0) thành viên
+                                            </small>
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i> @group.CreatedAt.ToString("dd/MM/yyyy")
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Phân trang cho nhóm của tôi -->
+                    @if (ViewBag.MyGroupsTotalPages > 1)
+                    {
+                        <div class="d-flex justify-content-center mt-4">
+                            <nav aria-label="Phân trang nhóm của tôi">
+                                <ul class="pagination">
+                                    <li class="page-item @(ViewBag.MyGroupsPage == 1 ? "disabled" : "")">
+                                        <a class="page-link" href="@Url.Action("StudentIndex", new { searchString = ViewBag.SearchString, myGroupsPage = ViewBag.MyGroupsPage - 1, joinedGroupsPage = ViewBag.JoinedGroupsPage })">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    @for (int i = 1; i <= ViewBag.MyGroupsTotalPages; i++)
+                                    {
+                                        <li class="page-item @(i == ViewBag.MyGroupsPage ? "active" : "")">
+                                            <a class="page-link" href="@Url.Action("StudentIndex", new { searchString = ViewBag.SearchString, myGroupsPage = i, joinedGroupsPage = ViewBag.JoinedGroupsPage })">@i</a>
+                                        </li>
+                                    }
+                                    <li class="page-item @(ViewBag.MyGroupsPage == ViewBag.MyGroupsTotalPages ? "disabled" : "")">
+                                        <a class="page-link" href="@Url.Action("StudentIndex", new { searchString = ViewBag.SearchString, myGroupsPage = ViewBag.MyGroupsPage + 1, joinedGroupsPage = ViewBag.JoinedGroupsPage })">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <!-- Nhóm tôi tham gia -->
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white border-0 p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold text-success">
+                        <i class="fas fa-users me-2"></i>Nhóm tôi tham gia
+                    </h5>
+                    <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                        @Model.Count(g => g.CreatorUserId != currentUserIdInt) nhóm
+                    </span>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                @{
+                    var joinedGroups = ViewBag.JoinedGroups as List<Do_An_Tot_Nghiep.Models.Group>;
+                }
+                @if (!joinedGroups.Any())
+                {
+                    <div class="alert alert-info rounded-4">
+                        <i class="fas fa-info-circle me-2"></i>Bạn chưa tham gia nhóm nào.
+                    </div>
+                }
+                else
+                {
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                        @foreach (var group in joinedGroups)
+                        {
+                            <div class="col">
+                                <div class="card h-100 border-0 shadow-sm rounded-4 group-card position-relative">
+                                    <div class="card-header bg-white border-0 p-4" style="position:relative;">
+                                        <h5 class="card-title text-success fw-bold mb-0">
+                                            <i class="fas fa-users me-2"></i>
+                                            <a href="@Url.Action("Details", new { id = group.GroupId })" class="group-link text-success text-decoration-none">@group.GroupName</a>
+                                        </h5>
+                                        <form asp-action="LeaveGroup" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn rời nhóm này?');" style="display:contents;">
+                                            <input type="hidden" name="groupId" value="@group.GroupId" />
+                                            <button type="submit" class="leave-group-btn" title="Rời nhóm">
+                                                <i class="fas fa-sign-out-alt"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    <div class="card-body p-4">
+                                        <p class="card-text text-muted">@group.Description</p>
+                                        <div class="d-flex justify-content-between align-items-center mt-3">
+                                            <small class="text-muted">
+                                                <i class="fas fa-users me-1"></i> @(group.GroupUsers?.Count ?? 0) thành viên
+                                            </small>
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i> @group.CreatedAt.ToString("dd/MM/yyyy")
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Phân trang cho nhóm tôi tham gia -->
+                    @if (ViewBag.JoinedGroupsTotalPages > 1)
+                    {
+                        <div class="d-flex justify-content-center mt-4">
+                            <nav aria-label="Phân trang nhóm tôi tham gia">
+                                <ul class="pagination">
+                                    <li class="page-item @(ViewBag.JoinedGroupsPage == 1 ? "disabled" : "")">
+                                        <a class="page-link" href="@Url.Action("StudentIndex", new { searchString = ViewBag.SearchString, myGroupsPage = ViewBag.MyGroupsPage, joinedGroupsPage = ViewBag.JoinedGroupsPage - 1 })">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    @for (int i = 1; i <= ViewBag.JoinedGroupsTotalPages; i++)
+                                    {
+                                        <li class="page-item @(i == ViewBag.JoinedGroupsPage ? "active" : "")">
+                                            <a class="page-link" href="@Url.Action("StudentIndex", new { searchString = ViewBag.SearchString, myGroupsPage = ViewBag.MyGroupsPage, joinedGroupsPage = i })">@i</a>
+                                        </li>
+                                    }
+                                    <li class="page-item @(ViewBag.JoinedGroupsPage == ViewBag.JoinedGroupsTotalPages ? "disabled" : "")">
+                                        <a class="page-link" href="@Url.Action("StudentIndex", new { searchString = ViewBag.SearchString, myGroupsPage = ViewBag.MyGroupsPage, joinedGroupsPage = ViewBag.JoinedGroupsPage + 1 })">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.delete-group-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                var groupId = this.getAttribute('data-group-id');
+                if (confirm('Bạn có chắc chắn muốn xóa nhóm này?')) {
+                    fetch('/Groups/Delete/' + groupId, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('input[name=__RequestVerificationToken]')?.value || '',
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: '__RequestVerificationToken=' + encodeURIComponent(document.querySelector('input[name=__RequestVerificationToken]')?.value || '')
+                    })
+                    .then(res => {
+                        if (res.redirected || res.ok) {
+                            // Ẩn card nhóm
+                            var card = btn.closest('.col');
+                            if(card) card.remove();
+                        } else {
+                            alert('Xóa nhóm thất bại!');
+                        }
+                    })
+                    .catch(() => alert('Có lỗi xảy ra!'));
+                }
+            });
+        });
+    });
+</script>
+
+<style>
+    .group-card {
+        border: 1px solid #fff3e0;
+        box-shadow: 0 2px 8px rgba(255,152,0,0.07);
+        transition: all 0.3s ease;
+    }
+    .group-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 24px rgba(255,152,0,0.13) !important;
+    }
+    .btn {
+        border-radius: 2rem;
+        font-weight: 500;
+        padding: 0.4rem 1.2rem;
+        transition: all 0.2s;
+        box-shadow: none !important;
+    }
+    .btn-outline-primary {
+        background: #fff;
+        color: #ff9800;
+        border: 1.5px solid #ff9800;
+    }
+    .btn-outline-primary:hover, .btn-outline-primary:focus {
+        background: #ff9800;
+        color: #fff;
+        border-color: #ff9800;
+    }
+    .btn-outline-info {
+        background: #fff;
+        color: #ff9800;
+        border: 1.5px solid #ff9800;
+    }
+    .btn-outline-info:hover, .btn-outline-info:focus {
+        background: #ff9800;
+        color: #fff;
+        border-color: #ff9800;
+    }
+    .btn-outline-danger {
+        background: #fff;
+        color: #e53935;
+        border: 1.5px solid #e53935;
+    }
+    .btn-outline-danger:hover, .btn-outline-danger:focus {
+        background: #e53935;
+        color: #fff;
+        border-color: #e53935;
+    }
+    .input-group:focus-within {
+        box-shadow: 0 0 0 0.15rem rgba(255,152,0,0.15);
+    }
+    .badge {
+        font-weight: 500;
+        border-radius: 1rem;
+        font-size: 1rem;
+        padding: 0.3em 1em;
+    }
+    .badge-primary {
+        background: #fff3e0;
+        color: #ff9800;
+    }
+    .badge-success {
+        background: #e8f5e9;
+        color: #43a047;
+    }
+    .text-primary, .group-card .card-title, .display-6, .fw-bold.text-primary {
+        color: #ff9800 !important;
+    }
+    .text-success, .fw-bold.text-success {
+        color: #43a047 !important;
+    }
+    .card {
+        overflow: hidden;
+        border: none;
+    }
+    .card-header {
+        background: #fff;
+        border: none;
+    }
+    .card-footer {
+        background: #fff;
+        border: none;
+    }
+    .form-control:focus {
+        border-color: #ff9800;
+        box-shadow: 0 0 0 0.15rem rgba(255,152,0,0.15);
+    }
+    .input-group-text {
+        background: #fff3e0;
+        color: #ff9800;
+        border: 1.5px solid #ff9800;
+    }
+    .btn-primary, .btn-primary:focus, .btn-primary:active {
+        background: #ff9800;
+        border-color: #ff9800;
+        color: #fff;
+        box-shadow: none;
+    }
+    .btn-primary:hover {
+        background: #ffa726;
+        border-color: #ffa726;
+        color: #fff;
+    }
+    .alert-info {
+        background: #fff3e0;
+        color: #ff9800;
+        border: none;
+    }
+    .display-6, h2.display-6 {
+        font-size: 1.7rem !important;
+        font-weight: 700;
+    }
+    @@ media (max-width: 768px) {
+        .display-6, h2.display-6 {
+            font-size: 1.2rem !important;
+        }
+        .btn {
+            padding: 0.4rem 0.8rem;
+            font-size: 1rem;
+        }
+    }
+    .group-link {
+        font-weight: 600;
+        font-size: 1.1em;
+        transition: color 0.15s;
+    }
+    .group-link.text-primary:hover, .group-link.text-success:hover {
+        color: #ffa726 !important;
+        text-decoration: underline;
+    }
+    .dropdown-menu {
+        border-radius: 1rem;
+        box-shadow: 0 4px 24px rgba(255,152,0,0.10);
+        border: 1.5px solid #ffe0b2;
+        min-width: 120px;
+        padding: 0.3rem 0;
+    }
+    .dropdown-item {
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+        font-size: 1rem;
+        color: #ff9800;
+        padding: 0.6rem 1.2rem;
+        transition: background 0.15s, color 0.15s;
+        border-radius: 0.7rem;
+    }
+    .dropdown-item .fa-edit { color: #ff9800; }
+    .dropdown-item.text-danger, .dropdown-item .fa-trash-alt { color: #e53935 !important; }
+    .dropdown-item:hover, .dropdown-item:focus {
+        background: #fff3e0;
+        color: #ff9800;
+    }
+    .dropdown-item.text-danger:hover, .dropdown-item.text-danger:focus {
+        background: #ffebee;
+        color: #e53935 !important;
+    }
+    .leave-group-btn {
+        position: absolute;
+        top: 1.2rem;
+        right: 1.2rem;
+        z-index: 2;
+        background: none;
+        border: none;
+        color: #e53935;
+        font-size: 1.3rem;
+        padding: 0;
+        transition: color 0.15s, background 0.15s;
+    }
+    .leave-group-btn:hover, .leave-group-btn:focus {
+        color: #b71c1c;
+        background: #ffebee;
+        border-radius: 50%;
+    }
+    .card-title,
+    .card-text,
+    small,
+    .form-control,
+    input,
+    .alert-info,
+    .badge,
+    .display-6,
+    .text-success,
+    .text-primary {
+        color: #212121 !important;
+    }
+    .input-group-text.search-icon {
+        background: #fff;
+        color: #ff9800;
+        border: 1.5px solid #ff9800;
+        border-right: none;
+        border-radius: 1.5rem 0 0 1.5rem;
+        font-size: 1.2rem;
+    }
+    .search-input {
+        border: 1.5px solid #ff9800;
+        border-left: none;
+        border-radius: 0 1.5rem 1.5rem 0;
+        font-size: 1.1rem;
+    }
+    .btn-search {
+        background: #fff;
+        color: #212121;
+        border: 1.5px solid #bdbdbd;
+        font-weight: 600;
+        transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .btn-search:hover, .btn-search:focus {
+        background: #ff9800;
+        color: #fff;
+        border-color: #ff9800;
+    }
+    @@ media (min-width: 768px) {
+        .search-input {
+            width: 100%;
+        }
+        .btn-search {
+            min-width: 120px;
+        }
+    }
+    form.d-flex .input-group {
+        flex-grow: 1;
+    }
+    form.d-flex .btn-search {
+        align-self: stretch;
+        height: auto;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        display: flex;
+        align-items: center;
+    }
+    .btn-create-group {
+        background: #fff;
+        color: #ff9800;
+        border: 1.5px solid #ff9800;
+        font-weight: 600;
+        font-size: 1.05rem;
+        padding: 0.4rem 1.2rem;
+        transition: background 0.2s, color 0.2s, border-color 0.2s;
+        box-shadow: none !important;
+    }
+    .btn-create-group:hover, .btn-create-group:focus {
+        background: #ff9800;
+        color: #fff;
+        border-color: #ff9800;
+    }
+    /* Đổi màu icon nhóm và tiêu đề mục thành cam cho phần header */
+    .card-header .fa-crown,
+    .card-header .fa-users,
+    .card-header h5.card-title,
+    .card-header h5.fw-bold,
+    .card-header h5.text-primary,
+    .card-header h5.text-success,
+    .card-header h5.fw-bold.text-primary,
+    .card-header h5.fw-bold.text-success {
+        color: #ff9800 !important;
+    }
+
+    /* Thêm style cho phân trang */
+    .pagination {
+        margin-bottom: 0;
+        gap: 4px;
+    }
+    
+    .page-link {
+        color: #ff9800;
+        border: none;
+        background: none;
+        border-radius: 0;
+        padding: 0.3rem 0.7rem;
+        font-weight: 500;
+        transition: color 0.2s;
+        box-shadow: none;
+        font-size: 1.1rem;
+    }
+    
+    .page-link:hover, .page-link:focus {
+        color: #ffa726;
+        background: none;
+        border: none;
+        text-decoration: underline;
+    }
+    
+    .page-item.active .page-link {
+        color: #ff9800;
+        font-weight: 700;
+        background: none;
+        border: none;
+        text-decoration: underline;
+    }
+    
+    .page-item.disabled .page-link {
+        color: #bdbdbd;
+        background: none;
+        border: none;
+        cursor: not-allowed;
+    }
+
+    .search-form-custom {
+        background: #fff3e0;
+        border-radius: 2rem;
+        box-shadow: 0 2px 12px rgba(255,152,0,0.10);
+        padding: 0.5rem 1rem;
+    }
+    .custom-search-group {
+        border-radius: 2rem;
+        overflow: hidden;
+        box-shadow: 0 1px 6px rgba(255,152,0,0.07);
+        background: #fff;
+    }
+    .search-icon-custom {
+        background: #fff3e0;
+        color: #ff9800;
+        border: none;
+        font-size: 1.3rem;
+        border-radius: 2rem 0 0 2rem;
+        padding-left: 1.2rem;
+    }
+    .search-input-custom {
+        border: none;
+        border-radius: 0;
+        font-size: 1.15rem;
+        background: #fff;
+        box-shadow: none;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    .search-input-custom:focus {
+        outline: none;
+        box-shadow: 0 0 0 0.15rem rgba(255,152,0,0.15);
+        background: #fffbe7;
+    }
+    .btn-search-custom {
+        background: #ff9800;
+        color: #fff;
+        border: none;
+        font-weight: 600;
+        font-size: 1.08rem;
+        border-radius: 2rem;
+        transition: background 0.2s, color 0.2s;
+        box-shadow: 0 2px 8px rgba(255,152,0,0.10);
+    }
+    .btn-search-custom:hover, .btn-search-custom:focus {
+        background: #ffa726;
+        color: #fff;
+    }
+    @@ media (max-width: 768px) {
+        .btn-search-custom {
+            font-size: 1rem;
+            padding: 0.4rem 1rem;
+        }
+        .search-form-custom {
+            padding: 0.2rem 0.5rem;
+        }
+    }
+    .minimal-search-form {
+        background: none;
+        border-radius: 1.2rem;
+        box-shadow: none;
+        padding: 0;
+    }
+    .minimal-search-group {
+        border-radius: 1.2rem;
+        overflow: hidden;
+        background: #fff;
+        border: 1px solid #ffe0b2;
+        box-shadow: none;
+    }
+    .minimal-search-icon {
+        background: #fff;
+        color: #ff9800;
+        border: none;
+        font-size: 1.1rem;
+        border-radius: 1.2rem 0 0 1.2rem;
+        padding-left: 1rem;
+    }
+    .minimal-search-input {
+        border: none;
+        border-radius: 0 1.2rem 1.2rem 0;
+        font-size: 1.08rem;
+        background: #fff;
+        box-shadow: none;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    .minimal-search-input:focus {
+        outline: none;
+        box-shadow: none;
+        background: #fffbe7;
+    }
+    @@ media (max-width: 768px) {
+        .minimal-search-group {
+            font-size: 1rem;
+        }
+        .minimal-search-input {
+            font-size: 1rem;
+        }
+    }
+</style> 

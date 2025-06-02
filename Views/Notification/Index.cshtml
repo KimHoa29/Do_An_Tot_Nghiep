@@ -33,21 +33,20 @@
             }
             else
             {
-                <div class="list-group notifications-list">
+                <div class="notifications-list-new">
                     @foreach (var notification in Model)
                     {
                         var iconClass = notification.Type switch
                         {
-                            1 => "fas fa-comment",
-                            2 => "fas fa-users",
-                            3 => "fas fa-file-alt",
-                            4 => "fas fa-file",
-                            5 => "fas fa-comment",
-                            6 => "fas fa-file",
-                            7 => "fas fa-comment",
-                            _ => "fas fa-bell"
+                            1 => "fas fa-comment text-primary bg-light-blue",
+                            2 => "fas fa-users text-success bg-light-green",
+                            3 => "fas fa-file-alt text-warning bg-light-yellow",
+                            4 => "fas fa-file text-info bg-light-cyan",
+                            5 => "fas fa-comment text-primary bg-light-blue",
+                            6 => "fas fa-file text-info bg-light-cyan",
+                            7 => "fas fa-comment text-primary bg-light-blue",
+                            _ => "fas fa-bell text-secondary bg-light-gray"
                         };
-
                         var typeText = notification.Type switch
                         {
                             1 => "Bình luận",
@@ -59,54 +58,59 @@
                             7 => "Bình luận",
                             _ => "Thông báo"
                         };
-
-                        <div class="list-group-item list-group-item-action notification-item @(!notification.IsRead ? "unread" : "")" 
-                             data-type="@notification.Type">
-                            <div class="d-flex w-100 justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <div class="notification-icon me-3">
-                                        <i class="@iconClass"></i>
+                        <div class="card notification-card mb-3 p-0 @(!notification.IsRead ? "unread" : "") notification-item" data-type="@notification.Type">
+                            <div class="card-body d-flex align-items-center">
+                                <div class="notification-icon-new me-3 position-relative">
+                                    <i class="@iconClass"></i>
+                                    @if (!notification.IsRead)
+                                    {
+                                        <span class="badge-dot"></span>
+                                    }
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <h5 class="mb-0 me-2 notification-title">@StripHtml(notification.Title)</h5>
+                                        @if (!notification.IsRead)
+                                        {
+                                            <span class="badge bg-primary ms-1">Chưa đọc</span>
+                                        }
                                     </div>
-                                    <div>
-                                        <h5 class="mb-1">@StripHtml(notification.Title)</h5>
-                                        <p class="mb-1 text-muted">@StripHtml(notification.Content)</p>
-                                        <small class="text-muted">
-                                            <i class="fas fa-clock me-1"></i>
+                                    <div class="notification-content mb-2">@StripHtml(notification.Content)</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-light text-dark border"><i class="fas fa-clock me-1"></i>
                                             @{
                                                 var timeDiff = DateTime.Now - notification.CreatedAt;
                                                 if (timeDiff.TotalMinutes < 1)
                                                 {
-                                                    <span>Vừa xong</span>
+                                                    <span>Vừa xong</span>;
                                                 }
                                                 else if (timeDiff.TotalHours < 1)
                                                 {
-                                                    <span>@((int)timeDiff.TotalMinutes) phút trước</span>
+                                                    <span>@((int)timeDiff.TotalMinutes) phút trước</span>;
                                                 }
                                                 else if (timeDiff.TotalDays < 1)
                                                 {
-                                                    <span>@((int)timeDiff.TotalHours) giờ trước</span>
+                                                    <span>@((int)timeDiff.TotalHours) giờ trước</span>;
                                                 }
                                                 else
                                                 {
-                                                    <span>@notification.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                                    <span>@notification.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>;
                                                 }
                                             }
-                                            <span class="ms-2">
-                                                <i class="fas fa-tag me-1"></i>@typeText
-                                            </span>
-                                        </small>
+                                        </span>
+                                        <span class="badge bg-secondary"><i class="fas fa-tag me-1"></i>@typeText</span>
                                     </div>
                                 </div>
-                                <div class="notification-actions">
+                                <div class="notification-actions ms-3 d-flex flex-column gap-2 align-items-end">
                                     @if (!notification.IsRead)
                                     {
-                                        <button class="btn btn-sm btn-outline-primary me-2" onclick="markAsRead(@notification.NotificationId)">
-                                            <i class="fas fa-check"></i> Đánh dấu đã đọc
+                                        <button class="btn btn-sm btn-outline-primary w-100" title="Đánh dấu đã đọc" onclick="markAsRead(@notification.NotificationId)">
+                                            <i class="fas fa-check"></i> Đã đọc
                                         </button>
                                     }
                                     @if (!string.IsNullOrEmpty(notification.Path))
                                     {
-                                        <a href="@notification.Path" class="btn btn-sm btn-primary">
+                                        <a href="@notification.Path" class="btn btn-sm btn-primary w-100" title="Xem chi tiết">
                                             <i class="fas fa-external-link-alt"></i> Xem
                                         </a>
                                     }
@@ -121,39 +125,64 @@
 </div>
 
 <style>
-    .notification-item {
-        transition: all 0.3s ease;
-        border-left: 4px solid transparent;
+    .notifications-list-new {
+        width: 100%;
     }
-
-    .notification-item:hover {
-        background-color: #f8f9fa;
+    .notification-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        transition: box-shadow 0.2s;
     }
-
-    .notification-item.unread {
-        background-color: #f8f9fa;
-        border-left: 4px solid #007bff;
+    .notification-card.unread {
+        background: #eaf3ff;
+        box-shadow: 0 4px 16px rgba(0,123,255,0.08);
+        border-left: 5px solid #007bff;
     }
-
-    .notification-icon {
-        width: 40px;
-        height: 40px;
+    .notification-card:hover {
+        box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+        background: #f8fafd;
+    }
+    .notification-icon-new {
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
-        background-color: #e9ecef;
+        background: #f1f3f6;
         display: flex;
         align-items: center;
         justify-content: center;
+        font-size: 1.7rem;
+        position: relative;
     }
-
-    .notification-icon i {
-        color: #6c757d;
+    .notification-title {
+        font-size: 1.1rem;
+        font-weight: 600;
     }
-
-    .notification-actions {
-        display: flex;
-        gap: 0.5rem;
+    .notification-content {
+        color: #555;
+        font-size: 0.98rem;
     }
-
+    .badge-dot {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 12px;
+        height: 12px;
+        background: #007bff;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px #eaf3ff;
+    }
+    .bg-light-blue { background: #eaf3ff !important; }
+    .bg-light-green { background: #e6f9f0 !important; }
+    .bg-light-yellow { background: #fffbe6 !important; }
+    .bg-light-cyan { background: #e6f7fa !important; }
+    .bg-light-gray { background: #f1f3f6 !important; }
+    .notification-actions .btn { min-width: 90px; }
+    @@ media (max-width: 600px) {
+        .notification-card { flex-direction: column; }
+        .notification-actions { flex-direction: row !important; gap: 0.5rem !important; }
+    }
 </style>
 
 @section Scripts {

@@ -122,6 +122,7 @@ namespace Do_An_Tot_Nghiep.Services
                 
                 // Tạo context từ CSDL
                 var contextFromDB = "";
+                var documentLinks = new List<string>();
                 if (relatedDocs.Any())
                 {
                     contextFromDB = "Thông tin từ cơ sở dữ liệu:\n";
@@ -130,6 +131,8 @@ namespace Do_An_Tot_Nghiep.Services
                         contextFromDB += $"- Tiêu đề: {doc.Title}\n";
                         contextFromDB += $"  Nội dung: {doc.Content}\n";
                         contextFromDB += "\n";
+                        // Thêm link document vào danh sách
+                        documentLinks.Add($"<a href='/Documents/Details/{doc.DocumentId}' target='_blank' class='document-link'>Xem chi tiết: {doc.Title}</a>");
                     }
                 }
 
@@ -186,6 +189,13 @@ namespace Do_An_Tot_Nghiep.Services
                     .GetProperty("parts")[0]
                     .GetProperty("text")
                     .GetString();
+
+                // Thêm links document vào cuối câu trả lời nếu có
+                if (documentLinks.Any())
+                {
+                    botMsg += "<br><b>Nguồn tài liệu:</b><br>" + string.Join("<br>", documentLinks);
+                }
+
                 _userChatHistory[userId].Add(("bot", botMsg));
 
                 // Lưu lịch sử chat vào database

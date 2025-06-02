@@ -34,6 +34,13 @@ namespace Do_An_Tot_Nghiep.Models
 
         [Column("avatar")]
         public String? Avatar { get; set; } 
+
+        [Column("reset_password_token")]
+        public string? ResetPasswordToken { get; set; }
+
+        [Column("reset_password_token_expiry")]
+        public DateTime? ResetPasswordTokenExpiry { get; set; }
+
         public virtual ICollection<GroupUser>? GroupUsers { get; set; }
 
         public virtual ICollection<TopicUser>? TopicUsers { get; set; }

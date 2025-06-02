@@ -1,4 +1,3 @@
-
 @model IEnumerable<Do_An_Tot_Nghiep.Models.CommentDocument>
 
 @foreach (var reply in Model)
@@ -39,7 +38,7 @@
                         }
                     </div>
                     <div class="reply-actions">
-                        <button class="custom-reply-btn" onclick="toggleReplyForm('@reply.CommentDocumentId')">
+                        <button class="custom-reply-btn" onclick="topicToggleReplyForm('@reply.CommentDocumentId')">
                             <i class="fas fa-reply"></i> Trả lời
                         </button>
                         <a asp-action="Edit" asp-route-id="@reply.CommentDocumentId" class="custom-reply-btn">
@@ -60,7 +59,7 @@
                                 <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
                             </div>
                             <div class="d-flex justify-content-end">
-                                <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@reply.CommentDocumentId')">Hủy</button>
+                                <button type="button" class="btn btn-light me-2" onclick="topicToggleReplyForm('@reply.CommentDocumentId')">Hủy</button>
                                 <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
                             </div>
                         </form>

@@ -150,17 +150,13 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             var documentActivity = new List<int>();
             var topicActivity = new List<int>();
-            var commentActivity = new List<int>();
+            var postActivity = new List<int>();
 
             foreach (var day in days)
             {
                 documentActivity.Add(await _context.Documents.CountAsync(d => d.CreatedAt.HasValue && d.CreatedAt.Value.Date == day));
                 topicActivity.Add(await _context.Topics.CountAsync(t => t.CreatedAt.HasValue && t.CreatedAt.Value.Date == day));
-                commentActivity.Add(
-                    await _context.Comments.CountAsync(c => c.CreatedAt.Date == day) +
-                    await _context.CommentDocuments.CountAsync(c => c.CreatedAt.Date == day) +
-                    await _context.CommentPosts.CountAsync(c => c.CreatedAt.Date == day)
-                );
+                postActivity.Add(await _context.Posts.CountAsync(p => p.CreatedAt.HasValue && p.CreatedAt.Value.Date == day));
             }
 
             ViewBag.UserStats = userStats;
@@ -177,7 +173,7 @@ namespace Do_An_Tot_Nghiep.Controllers
             ViewBag.ActivityDates = days.Select(d => d.ToString("dd/MM")).ToList();
             ViewBag.DocumentActivity = documentActivity;
             ViewBag.TopicActivity = topicActivity;
-            ViewBag.CommentActivity = commentActivity;
+            ViewBag.PostActivity = postActivity;
 
             return View();
         }

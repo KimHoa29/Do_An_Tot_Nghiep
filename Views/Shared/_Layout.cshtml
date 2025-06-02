@@ -22,7 +22,8 @@
                     <span class="faculty">KHOA CÔNG NGHỆ THÔNG TIN</span>
                 </div>
                 <div class="navbar-title">
-                     <span >HỆ THỐNG CỐ VẤN HỌC TẬP</span> <!-- Hệ thống cố vấn học tập chạy ngang -->
+                    <i class="fas fa-graduation-cap" style="margin-right:8px;"></i>
+                    <span >HỆ THỐNG CỐ VẤN HỌC TẬP</span> <!-- Hệ thống cố vấn học tập chạy ngang -->
                 </div>
                 <div class="navbar-nav ml-auto">
                     @if (!ViewBag.IsLogin)
@@ -44,15 +45,18 @@
                             </div>
                         </div>
 
-                        @if (ViewBag.Role.Equals("Student"))
+                        @if (ViewBag.Role != null && ViewBag.Role.Equals("Student"))
                         {
                             <div class="user-dropdown">
                                 <span class="navbar-text" id="userDropdown">
-                                    Chào, @ViewBag.CurrentUserName <i class="fas fa-caret-down"></i>
+                                    Chào, @(ViewBag.CurrentUserName ?? "") <i class="fas fa-caret-down"></i>
                                 </span>
                                 <div class="user-dropdown-menu" id="dropdownMenu">
-                                    <a asp-action="Profile" asp-controller="Account" class="btn-sm text-info" title="Chi tiết">
+                                    <a asp-action="Profile" asp-controller="Account" class="btn-sm" title="Chi tiết">
                                         <i class="fas fa-user"></i> Xem thông tin
+                                    </a>
+                                    <a asp-action="ChangePassword" asp-controller="Account" class="btn-sm" title="Đổi mật khẩu">
+                                        <i class="fas fa-key"></i> Đổi mật khẩu
                                     </a>
                                     <a href="/Account/Logout">
                                         <i class="fas fa-sign-out-alt"></i> Đăng xuất
@@ -60,15 +64,18 @@
                                 </div>
                             </div>
                         }
-                        else if (ViewBag.Role.Equals("Lecturer"))
+                        else if (ViewBag.Role != null && ViewBag.Role.Equals("Lecturer"))
                         {
                             <div class="user-dropdown">
                                 <span class="navbar-text" id="userDropdown">
-                                    Chào, @ViewBag.CurrentUserName <i class="fas fa-caret-down"></i>
+                                    Chào, @(ViewBag.CurrentUserName ?? "") <i class="fas fa-caret-down"></i>
                                 </span>
                                 <div class="user-dropdown-menu" id="dropdownMenu">
-                                    <a asp-action="Profile" asp-controller="Account" class="btn-sm text-info" title="Chi tiết">
+                                    <a asp-action="Profile" asp-controller="Account" class="btn-sm" title="Chi tiết">
                                         <i class="fas fa-user"></i> Xem thông tin
+                                    </a>
+                                    <a asp-action="ChangePassword" asp-controller="Account" class="btn-sm" title="Đổi mật khẩu">
+                                        <i class="fas fa-key"></i> Đổi mật khẩu
                                     </a>
                                     <a href="/Account/Logout">
                                         <i class="fas fa-sign-out-alt"></i> Đăng xuất
@@ -76,11 +83,11 @@
                                 </div>
                             </div>
                         }
-                        else if (ViewBag.Role.Equals("Admin"))
+                        else if (ViewBag.Role != null && ViewBag.Role.Equals("Admin"))
                         {
                             <div class="user-dropdown">
                                 <span class="navbar-text" id="userDropdown">
-                                    Chào, @ViewBag.CurrentUserName <i class="fas fa-caret-down"></i>
+                                    Chào, @(ViewBag.CurrentUserName ?? "") <i class="fas fa-caret-down"></i>
                                 </span>
                                 <div class="user-dropdown-menu" id="dropdownMenu">
                                     <a href="/Account/Logout">
@@ -95,21 +102,21 @@
         </nav>
 
         <!-- Menu dọc hiển thị chức năng -->
-        <div class="sidebar @(ViewBag.Role.Equals("Lecturer") || ViewBag.Role.Equals("Student") ? "collapsed" : "")" id="sidebar">
+        <div class="sidebar @((ViewBag.Role != null && (ViewBag.Role.Equals("Lecturer") || ViewBag.Role.Equals("Student"))) ? "collapsed" : "")" id="sidebar">
             <button id="sidebarToggle" style="margin: 0 auto 16px auto; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 50%; border: 1px solid #eee; width: 36px; height: 36px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); cursor: pointer;">
                 <i class="fas fa-bars"></i>
             </button>
-            @if (ViewBag.Role.Equals("Student"))
+            @if (ViewBag.Role != null && ViewBag.Role.Equals("Student"))
             {
                 <a href="/Home/Index" class="nav-link">
                     <i class="fas fa-home"></i>
                     <span>Trang chủ</span>
                 </a>
-                <a href="/Students/Details/@ViewBag.CurrentUserId" class="nav-link">
+                <a href="/Students/Details/@(ViewBag.CurrentUserId ?? "")" class="nav-link">
                     <i class="fas fa-user-graduate"></i>
                     <span>Thông tin sinh viên</span>
                 </a>
-                <a href="/Groups/Index" class="nav-link">
+                <a href="/Groups/StudentIndex" class="nav-link">
                     <i class="fas fa-users"></i>
                     <span>Group</span>
                 </a>
@@ -123,15 +130,15 @@
                 </a>
             }
 
-            @if (ViewBag.Role.Equals("Lecturer"))
+            @if (ViewBag.Role != null && ViewBag.Role.Equals("Lecturer"))
             {
                 <a href="/Home/Index" class="nav-link">
                     <i class="fas fa-home"></i>
                     <span>Trang chủ</span>
                 </a>
-                <a href="/Lecturers/Details/@ViewBag.CurrentUserId" class="nav-link">
+                <a href="/Lecturers/Details/@(ViewBag.CurrentUserId ?? "")" class="nav-link">
                     <i class="fas fa-user-graduate"></i>
-                    <span>Sinh viên</span>
+                    <span>Sinh viên QL</span>
                 </a>
                 <a href="/Groups/Index" class="nav-link">
                     <i class="fas fa-users"></i>
@@ -183,7 +190,7 @@
                 </div>
             }
 
-            @if (ViewBag.Role.Equals("Admin"))
+            @if (ViewBag.Role != null && ViewBag.Role.Equals("Admin"))
             {
                 <!-- Giữ nguyên menu Admin như cũ -->
                 <a href="/Statistics/Index" class="nav-link"><i class="fas fa-tachometer-alt"></i>Thống kê</a>
@@ -236,7 +243,7 @@
             </main>
         </div>
 
-        @if (ViewBag.Role == "Student" || ViewBag.Role == "Lecturer")
+        @if ((ViewBag.Role != null && (ViewBag.Role == "Student" || ViewBag.Role == "Lecturer")))
         {
         <footer style="background:#F07C18;color:#fff;padding:24px 0 0 0;margin-top:40px;flex-shrink:0;">
             <div style="display:flex;align-items:center;justify-content:center;max-width:1800px;margin:0 auto;gap:32px;">
@@ -244,7 +251,7 @@
                     <iframe src="https://www.google.com/maps?q=Trường+Đại+Học+Đại+Nam,+Phú+Lãm,+Hà+Đông,+Hà+Nội,+Vietnam&output=embed" width="140" height="90" style="border:0;border-radius:8px;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                 </div>
                 <div style="flex:3;display:flex;align-items:center;justify-content:center;gap:24px;">
-                    <img src="/css/img/logo_ft.png" alt="Đại Nam" style="height:100px">
+                    <img src="/css/img/logo.png" alt="Đại Nam" style="height:150px">
                     <div style="text-align:left;">
                         <div style="font-size:2rem;font-weight:bold;">TRƯỜNG ĐẠI HỌC ĐẠI NAM</div>
                         <div style="margin:8px 0 0 0;font-size:1.1rem;">Địa chỉ: Số 1 Phố Xốm - Phú Lãm - Hà Đông - Hà Nội</div>

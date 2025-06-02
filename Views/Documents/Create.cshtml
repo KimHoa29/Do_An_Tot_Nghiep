@@ -39,7 +39,7 @@
             <div class="form-group ms-3 mt-3" style="min-width: 220px;">
                 <label>Loại hiển thị</label>
                 <select id="VisibilityType" name="VisibilityType" class="form-control">
-                    @foreach (var type in (SelectList)ViewBag.VisibilityTypes)
+                    @foreach (SelectListItem type in ViewBag.VisibilityTypes as IEnumerable<SelectListItem>)
                     {
                         <option value="@type.Value">@type.Text</option>
                     }
@@ -50,7 +50,7 @@
         <div class="mb-3" id="groupSelect" style="display: none;">
             <label class="form-label">Chọn nhóm</label>
             <select name="selectedGroups" class="form-control" multiple>
-                @foreach (var group in (MultiSelectList)ViewBag.Groups)
+                @foreach (SelectListItem group in ViewBag.Groups as IEnumerable<SelectListItem>)
                 {
                     <option value="@group.Value">@group.Text</option>
                 }
@@ -61,7 +61,7 @@
         <div class="mb-3" id="userSelect" style="display: none;">
             <label class="form-label">Chọn người dùng</label>
             <select name="selectedUsers" class="form-control" multiple>
-                @foreach (var user in (MultiSelectList)ViewBag.Users)
+                @foreach (SelectListItem user in ViewBag.Users as IEnumerable<SelectListItem>)
                 {
                     <option value="@user.Value">@user.Text</option>
                 }

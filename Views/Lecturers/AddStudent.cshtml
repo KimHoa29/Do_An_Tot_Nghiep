@@ -1,4 +1,5 @@
 ﻿@model Do_An_Tot_Nghiep.Models.AddStudentViewModel
+<link rel="stylesheet" href="~/css/lecturer-addstudent.css" />
 
 @* @{
     ViewData["Title"] = "Thêm sinh viên quản lý của giảng viên @Model.FullName";
@@ -6,40 +7,249 @@
 
 <h2>@ViewData["Title"]</h2> *@
 
-<h2 class="text-center text-primary">Thêm sinh viên quản lý của giảng viên @Model.FullName</h2>
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb bg-transparent px-0">
+            <li class="breadcrumb-item">
+                <a asp-action="Details" asp-route-id="@Model.LecturerId" class="text-decoration-none" style="color: #ff8000; font-weight: 500;">
+                    <i class="fas fa-arrow-left me-2" style="color: #ff8000;"></i>Trang chi tiết
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                Thêm sinh viên quản lý
+            </li>
+        </ol>
+    </nav>
 
-<form asp-action="AddStudent" method="post">
-    <input type="hidden" name="LecturerId" value="@Model.LecturerId" />
+    <!-- Header -->
+    <div class="mb-4 text-center">
+        <h2 class="h3 mb-1 fw-bold" style="color: #000;">Thêm sinh viên quản lý</h2>
+        <div class="fs-5" style="color: #7c3aed;">Giảng viên: @Model.FullName</div>
+    </div>
 
-    <button type="submit" class="btn btn-success mb-3">Thêm sinh viên</button>
+    <!-- Search Bar -->
+    <div class="mb-4" style="background: #fff;">
+        <form asp-action="AddStudent" method="get" class="search-form p-0 m-0" style="box-shadow: none; border: none;">
+            <input type="hidden" name="lecturerId" value="@Model.LecturerId" />
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" name="searchString" class="form-control border-start-0" 
+                       placeholder="Tìm kiếm sinh viên" 
+                       value="@Context.Request.Query["searchString"]" />
+                <button type="submit" class="btn btn-orange-outline">
+                    <i class="fas fa-search me-2"></i>Tìm kiếm
+                </button>
+            </div>
+        </form>
+    </div>
 
-    <table class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th></th> <!-- Cột cho checkbox -->
-                <th>Mã sinh viên</th>
-                <th>Họ và tên</th>
-                <th>Lớp</th>
-                <th>Ngành</th>
-                <th>Email</th>
-                <th>SĐT</th>
-            </tr>
-        </thead>
-        <tbody>
-        @foreach (var student in Model.Students)
-        {
-            <tr>
-                <td>
-                    <input type="checkbox" name="SelectedStudentIds" value="@student.StudentId" />
-                </td>
-                <td>@student.StudentId</td>
-                <td>@student.FullName</td>
-                <td>@student.Class</td>
-                <td>@student.Major</td>
-                <td>@student.Email</td>
-                <td>@student.Phone</td>
-            </tr>
+    <!-- Student List -->
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="AddStudent" method="post" class="add-form">
+                <div id="student-error" class="alert alert-danger mb-3" style="display:none"></div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 40px;">
+                                    <div class="form-check">
+                                        <input type="checkbox" id="select-all" class="form-check-input" />
+                                    </div>
+                                </th>
+                                <th>Mã sinh viên</th>
+                                <th>Họ và tên</th>
+                                <th>Lớp</th>
+                                <th>Ngành</th>
+                                <th>Email</th>
+                                <th>SĐT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var student in Model.Students)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="form-check">
+                                        <input type="checkbox" name="SelectedStudentIds" 
+                                               value="@student.StudentId" class="form-check-input student-checkbox" />
+                                    </div>
+                                </td>
+                                <td>@student.UserId</td>
+                                <td>@student.FullName</td>
+                                <td>@student.Class</td>
+                                <td>@student.Major</td>
+                                <td>@student.Email</td>
+                                <td>@student.Phone</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+
+                <input type="hidden" name="LecturerId" value="@Model.LecturerId" />
+                <div class="d-flex justify-content-end mt-3">
+                    <button type="submit" class="btn btn-orange-outline">
+                        <i class="fas fa-plus me-2"></i>Thêm sinh viên
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            @{
+                var prevDisabled = !Model.Students.HasPreviousPage ? "disabled" : "";
+                var nextDisabled = !Model.Students.HasNextPage ? "disabled" : "";
+                int totalPages = Model.Students.TotalPages;
+                int currentPage = Model.Students.PageIndex;
+            }
+            <li class="page-item @prevDisabled">
+                <a asp-action="AddStudent"
+                   asp-route-lecturerId="@Model.LecturerId"
+                   asp-route-pageNumber="@(Model.Students.PageIndex - 1)"
+                   asp-route-searchString="@Context.Request.Query["searchString"]"
+                   class="page-link">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            @if (totalPages > 1)
+            {
+                <li class="page-item @(1 == currentPage ? "active" : "")">
+                    <a asp-action="AddStudent" 
+                       asp-route-lecturerId="@Model.LecturerId"
+                       asp-route-pageNumber="1" 
+                       asp-route-searchString="@Context.Request.Query["searchString"]" 
+                       class="page-link">1</a>
+                </li>
+                
+                if (currentPage > 4)
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+                
+                for (int i = Math.Max(2, currentPage - 2); i <= Math.Min(totalPages - 1, currentPage + 2); i++)
+                {
+                    <li class="page-item @(i == currentPage ? "active" : "")">
+                        <a asp-action="AddStudent" 
+                           asp-route-lecturerId="@Model.LecturerId"
+                           asp-route-pageNumber="@i" 
+                           asp-route-searchString="@Context.Request.Query["searchString"]" 
+                           class="page-link">@i</a>
+                    </li>
+                }
+                
+                if (currentPage < totalPages - 3)
+                {
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                }
+                
+                if (totalPages > 1)
+                {
+                    <li class="page-item @(totalPages == currentPage ? "active" : "")">
+                        <a asp-action="AddStudent" 
+                           asp-route-lecturerId="@Model.LecturerId"
+                           asp-route-pageNumber="@totalPages" 
+                           asp-route-searchString="@Context.Request.Query["searchString"]" 
+                           class="page-link">@totalPages</a>
+                    </li>
+                }
+            }
+            <li class="page-item @nextDisabled">
+                <a asp-action="AddStudent"
+                   asp-route-lecturerId="@Model.LecturerId"
+                   asp-route-pageNumber="@(Model.Students.PageIndex + 1)"
+                   asp-route-searchString="@Context.Request.Query["searchString"]"
+                   class="page-link">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+@section Scripts {
+<script>
+    document.getElementById('select-all').addEventListener('change', function() {
+        var checkboxes = document.querySelectorAll('.student-checkbox');
+        for (var checkbox of checkboxes) {
+            checkbox.checked = this.checked;
         }
-        </tbody>
-    </table>
-</form>
+    });
+
+    document.querySelector('.add-form').addEventListener('submit', function(e) {
+        var checked = document.querySelectorAll('.student-checkbox:checked').length;
+        var errorDiv = document.getElementById('student-error');
+        if (checked === 0) {
+            e.preventDefault();
+            errorDiv.textContent = 'Vui lòng chọn ít nhất một sinh viên để thêm vào quản lý';
+            errorDiv.style.display = 'block';
+        } else {
+            errorDiv.style.display = 'none';
+        }
+    });
+</script>
+<style>
+    .btn-orange-outline {
+        color: #ff8000 !important;
+        border: 1px solid #ff8000 !important;
+        background: #fff !important;
+        font-weight: 500;
+        transition: background 0.2s, color 0.2s;
+    }
+    .btn-orange-outline:hover, .btn-orange-outline:active, .btn-orange-outline:focus {
+        background: #ff8000 !important;
+        color: #fff !important;
+        border-color: #ff8000 !important;
+    }
+
+    /* Pagination custom style */
+    .pagination {
+        --bs-pagination-bg: transparent;
+        --bs-pagination-border-width: 0;
+        margin-bottom: 0;
+    }
+    .pagination .page-item {
+        margin: 0 2px;
+    }
+    .pagination .page-link {
+        color: #ff8000;
+        border: none !important;
+        border-radius: 6px !important;
+        background: transparent;
+        font-weight: 500;
+        transition: background 0.2s, color 0.2s;
+        min-width: 36px;
+        text-align: center;
+        box-shadow: none;
+    }
+    .pagination .page-link:focus {
+        box-shadow: none;
+    }
+    .pagination .page-item.active .page-link {
+        background: #ff8000;
+        color: #fff;
+        border: none !important;
+    }
+    .pagination .page-link:hover {
+        background: #ff8000;
+        color: #fff;
+        border: none !important;
+    }
+    .pagination .page-item.disabled .page-link {
+        color: #ccc;
+        background: #f8f9fa;
+        border: none !important;
+    }
+    .search-form .form-control:focus {
+        border-color: #ff8000 !important;
+        box-shadow: 0 0 0 2px rgba(255,128,0,0.15) !important;
+    }
+</style>
+}

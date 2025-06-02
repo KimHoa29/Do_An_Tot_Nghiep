@@ -66,7 +66,7 @@
                 </small>
             </div>
             <div class="topic-actions">
-                <button type="button" class="three-dots-btn" onclick="event.stopPropagation(); toggleTopicMenu('@Model.TopicId')">
+                <button type="button" class="three-dots-btn" onclick="TopicManager.toggleMenu('@Model.TopicId', event)">
                     <i class="fas fa-ellipsis-v"></i>
                 </button>
                 @if (Model.UserId.ToString() == ViewBag.currentUserID)
@@ -76,7 +76,7 @@
                         <a href="@Url.Action("Edit", "Topics", new { id = Model.TopicId })" class="menu-item">
                             <i class="fas fa-edit"></i> Chỉnh sửa
                         </a>
-                        <a href="javascript:void(0);" onclick="showDeleteTopicModal('@Model.TopicId')" class="menu-item delete">
+                        <a href="javascript:void(0);" onclick="TopicManager.showDeleteTopicModal('@Model.TopicId')" class="menu-item delete">
                             <i class="fas fa-trash"></i> Xóa
                         </a>
                     </div>
@@ -119,15 +119,15 @@
 
         <!-- Nút phản hồi và like -->
         <div class="actions mt-3">
-            <button class="action-btn like-btn @(isLiked ? "liked" : "")" onclick="toggleTopicLike('@Model.TopicId')" data-topic-id="@Model.TopicId">
+            <button class="action-btn like-btn @(isLiked ? "liked" : "")" onclick="TopicManager.toggleLike('@Model.TopicId')" data-topic-id="@Model.TopicId">
                 <i class="fas fa-heart"></i>
                 <span class="count-number">@likeCount</span>
             </button>
-            <button class="action-btn comment-btn" type="button" onclick="toggleCommentBlock('@Model.TopicId')">
+            <button class="action-btn comment-btn" type="button" onclick="TopicManager.toggleCommentBlock('@Model.TopicId')">
                 <i class="fas fa-comment"></i>
                 <span class="count-number">@(Model.Comments?.Count ?? 0)</span>
             </button>
-            <button class="action-btn save-btn @(isSaved ? "saved" : "")" onclick="toggleSave('@Model.TopicId', 'topic')" data-topic-id="@Model.TopicId">
+            <button class="action-btn save-btn @(isSaved ? "saved" : "")" onclick="TopicManager.toggleSave('@Model.TopicId', 'topic')" data-topic-id="@Model.TopicId">
                 <i class="fas fa-bookmark"></i>
                 <span class="count-number">@saveCount</span>
             </button>
@@ -137,16 +137,17 @@
         <div class="comment-block mt-3" id="comment-block-@Model.TopicId" style="display: none;">
             <!-- Form bình luận chính -->
             <div class="comment-form">
-                <form id="commentForm-@Model.TopicId" onsubmit="submitTopicComment(event, @Model.TopicId)">
+                <form id="topic-commentForm-@Model.TopicId" onsubmit="TopicManager.submitComment(event, @Model.TopicId)" enctype="multipart/form-data" style="position: relative;">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="TopicId" value="@Model.TopicId" />
-                    <div class="mb-2">
-                        <textarea id="commentContent-@Model.TopicId" class="form-control" placeholder="Viết bình luận..." rows="3" required></textarea>
+                    <div class="mb-2 position-relative">
+                        <textarea id="commentContent-@Model.TopicId" class="form-control comment-input" placeholder="Viết bình luận..." rows="2" required style="padding-right: 40px;"></textarea>
+                        <label for="commentImage-@Model.TopicId" class="comment-image-label">
+                            <i class="fas fa-image"></i>
+                        </label>
+                        <input type="file" id="commentImage-@Model.TopicId" class="form-control d-none" accept="image/*" />
                     </div>
-                    <div class="mb-2">
-                        <input type="file" id="commentImage-@Model.TopicId" class="form-control" accept="image/*" />
-                    </div>
-                    <button type="submit" class="btn btn-purple">Gửi bình luận</button>
+                    <button type="submit" class="btn btn-purple comment-submit-btn">Gửi bình luận</button>
                 </form>
             </div>
 
@@ -156,7 +157,7 @@
                 <div class="comments-list mb-3" id="comments-list-@Model.TopicId">
                     @foreach (var comment in Model.Comments.Where(c => c.ParentCommentId == null).OrderByDescending(c => c.CreatedAt))
                     {
-                        <div class="comment-item d-flex mb-3" id="comment-@comment.CommentId">
+                        <div class="comment-item d-flex mb-3" id="topic-comment-@comment.CommentId">
                             <img src="@(string.IsNullOrEmpty(comment.User?.Avatar) ? "/css/img/default-avatar.jpg" : comment.User.Avatar)" alt="Avatar" class="comment-avatar me-2" />
                             <div class="comment-body">
                                 <div class="comment-header d-flex justify-content-between">
@@ -189,96 +190,36 @@
                                 </div>
 
                                 <div class="comment-actions">
-                                    <button class="custom-reply-btn" onclick="toggleReplyForm('@comment.CommentId')">
+                                    <button class="custom-reply-btn" data-comment-id="@comment.CommentId">
                                         <i class="fas fa-reply"></i> Trả lời
                                     </button>
                                 </div>
 
                                 <!-- Form bình luận trả lời (cho comment cha) -->
-                                <div class="reply-form mt-2" id="reply-form-@comment.CommentId" style="display: none;">
-                                    <form class="nested-reply-form" onsubmit="submitTopicReply(event, @comment.CommentId)" enctype="multipart/form-data">
+                                <div class="reply-form mt-2" id="topic-reply-form-@comment.CommentId" style="display: none;">
+                                    <form class="topic-nested-reply-form" onsubmit="TopicManager.submitReply(event, @comment.CommentId)" enctype="multipart/form-data" style="position: relative;">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="ParentCommentId" value="@comment.CommentId" />
                                         <input type="hidden" name="TopicId" value="@Model.TopicId" />
-                                        <div class="mb-2">
-                                            <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
-                                        </div>
-                                        <div class="mb-2">
-                                            <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                                        <div class="mb-2 position-relative">
+                                            <textarea name="Content" class="form-control comment-input" placeholder="Nhập phản hồi..." rows="2" required style="padding-right: 40px;"></textarea>
+                                            <label for="replyImage-@comment.CommentId" class="comment-image-label">
+                                                <i class="fas fa-image"></i>
+                                            </label>
+                                            <input type="file" id="replyImage-@comment.CommentId" name="ImageUpload" class="form-control d-none" accept="image/*" />
                                         </div>
                                         <div class="d-flex justify-content-end">
-                                            <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@comment.CommentId')">Hủy</button>
-                                            <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                                            <button type="button" class="btn btn-light me-2" onclick="TopicManager.toggleReplyForm('@comment.CommentId')">Hủy</button>
+                                            <button type="submit" class="btn btn-purple comment-submit-btn">Gửi phản hồi</button>
                                         </div>
                                     </form>
                                 </div>
 
                                 <!-- Phần replies -->
-                                <div class="nested-replies" id="replies-@comment.CommentId">
+                                <div class="nested-replies" id="topic-replies-@comment.CommentId">
                                     @if (comment.Replies != null && comment.Replies.Any())
                                     {
-                                        @foreach (var reply in comment.Replies.OrderBy(r => r.CreatedAt))
-                                        {
-                                            <div class="reply-item" id="reply-@reply.CommentId">
-                                                <div class="reply-line"></div>
-                                                <div class="d-flex">
-                                                    <img src="@(string.IsNullOrEmpty(reply.User?.Avatar) ? "/css/img/default-avatar.jpg" : reply.User.Avatar)" alt="Avatar" class="reply-avatar" />
-                                                    <div class="reply-content">
-                                                        <div class="reply-header">
-                                                            <strong class="reply-username">
-                                                                @reply.User?.Username –
-                                                                @{
-                                                                    var replyRole = reply.User?.Role;
-                                                                    string replyRoleText = replyRole switch
-                                                                    {
-                                                                        "Lecturer" => "Giảng viên, CVHT",
-                                                                        "Admin" => "Nhân viên",
-                                                                        "Student" => "Sinh viên",
-                                                                        _ => "Người dùng"
-                                                                    };
-                                                                }
-                                                                <span class="role">@replyRoleText</span>
-                                                            </strong>
-                                                            <small class="reply-time">@reply.CreatedAt.ToString("HH:mm, dd/MM/yyyy")</small>
-                                                        </div>
-                                                        <div class="reply-text">
-                                                            @Html.Raw(reply.Content)
-                                                            @if (!string.IsNullOrEmpty(reply.ImageUrl))
-                                                            {
-                                                                <div class="reply-image">
-                                                                    <img src="@reply.ImageUrl" alt="Ảnh phản hồi" />
-                                                                </div>
-                                                            }
-                                                        </div>
-                                                        <div class="reply-actions">
-                                                            <button class="custom-reply-btn" onclick="toggleReplyForm('@reply.CommentId')">
-                                                                <i class="fas fa-reply"></i> Trả lời
-                                                            </button>
-                                                        </div>
-
-                                                        <!-- Form trả lời cho reply (lồng nhau) -->
-                                                        <div class="reply-form mt-2" id="reply-form-@reply.CommentId" style="display: none;">
-                                                            <form class="nested-reply-form" onsubmit="submitTopicReply(event, @reply.CommentId)" enctype="multipart/form-data">
-                                                                @Html.AntiForgeryToken()
-                                                                <input type="hidden" name="ParentCommentId" value="@reply.CommentId" />
-                                                                <input type="hidden" name="TopicId" value="@Model.TopicId" />
-                                                                <div class="mb-2">
-                                                                    <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
-                                                                </div>
-                                                                <div class="mb-2">
-                                                                    <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
-                                                                </div>
-                                                                <div class="d-flex justify-content-end">
-                                                                    <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@reply.CommentId')">Hủy</button>
-                                                                    <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                        <div class="nested-replies" id="replies-@reply.CommentId"></div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        }
+                                        @Html.Partial("_CommentReplies", new { replies = comment.Replies.OrderBy(r => r.CreatedAt).ToList(), level = 1 })
                                     }
                                 </div>
                             </div>
@@ -287,407 +228,28 @@
                 </div>
             }
         </div>
+        <div class="modal fade" id="deleteTopicModal" tabindex="-1" aria-labelledby="deleteTopicModalLabel" aria-hidden="true">
+            @Html.AntiForgeryToken()
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteTopicModalLabel">Xác nhận xóa chủ đề</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                    </div>
+                    <div class="modal-body">
+                        Bạn có chắc chắn muốn xóa chủ đề này không?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteTopicBtn">Xóa</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 }
 
 <!-- Modal xác nhận xóa -->
-<div class="modal fade" id="deleteTopicModal" tabindex="-1" aria-labelledby="deleteTopicModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteTopicModalLabel">Xác nhận xóa chủ đề</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-            </div>
-            <div class="modal-body">
-                Bạn có chắc chắn muốn xóa chủ đề này không?
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteTopicBtn">Xóa</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    var topicIdToDelete = null;
-
-    function toggleCommentBlock(topicId) {
-        const block = document.getElementById(`comment-block-${topicId}`);
-        const wasHidden = block.style.display === 'none';
-        block.style.display = wasHidden ? 'block' : 'none';
-
-        if (wasHidden) {
-            const textarea = block.querySelector('textarea');
-            if (textarea) textarea.focus();
-        }
-    }
-
-    function toggleReplyForm(commentId) {
-        console.log('toggleReplyForm called with:', commentId); // Log khi gọi hàm
-        var form = document.getElementById('reply-form-' + commentId);
-        if (form) {
-            console.log('Found reply form for id:', 'reply-form-' + commentId, form);
-            form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
-            if (form.style.display === 'block') {
-                var textarea = form.querySelector('textarea');
-                if (textarea) {
-                    console.log('Focusing textarea in reply form:', textarea);
-                    textarea.focus();
-                } else {
-                    console.warn('No textarea found in reply form:', 'reply-form-' + commentId);
-                }
-            }
-        } else {
-            console.warn('Reply form not found for id:', 'reply-form-' + commentId);
-        }
-    }
-
-    function toggleTopicMenu(topicId) {
-        event.stopPropagation();
-        const menu = document.getElementById(`topic-menu-${topicId}`);
-        if (!menu) return;
-
-        const isVisible = menu.classList.contains('show');
-
-        // Hide all menus first
-        document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(m => {
-            m.classList.remove('show');
-        });
-
-        // Show this menu if it wasn't visible
-        if (!isVisible) {
-            menu.classList.add('show');
-        }
-    }
-
-    function showDeleteTopicModal(topicId) {
-        topicIdToDelete = topicId;
-        const modal = new bootstrap.Modal(document.getElementById('deleteTopicModal'));
-        modal.show();
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const confirmDeleteBtn = document.getElementById('confirmDeleteTopicBtn');
-        if (confirmDeleteBtn) {
-            confirmDeleteBtn.onclick = function() {
-                if (topicIdToDelete) {
-                    fetch(`/Topics/Delete/${topicIdToDelete}`, {
-                        method: 'POST',
-                        headers: {
-                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
-                        }
-                    })
-                    .then(response => {
-                        if (response.redirected) {
-                            window.location.href = response.url;
-                        } else {
-                            window.location.reload();
-                        }
-                    });
-                }
-            };
-        }
-    });
-
-    function toggleTopicLike(topicId) {
-        const likeBtn = document.querySelector(`.like-btn[data-topic-id="${topicId}"]`);
-        const likeCountSpan = likeBtn.querySelector('.count-number');
-
-        fetch(`/Topics/ToggleLike/${topicId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                if (data.isLiked) {
-                    likeBtn.classList.add('liked');
-                } else {
-                    likeBtn.classList.remove('liked');
-                }
-                likeCountSpan.textContent = data.likeCount;
-            } else {
-                alert(data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Có lỗi xảy ra khi thực hiện thao tác. Vui lòng thử lại sau.');
-        });
-    }
-
-    function toggleSave(id, type) {
-        const saveBtn = document.querySelector(`.save-btn[data-${type}-id="${id}"]`);
-        const saveCountSpan = saveBtn.querySelector('.count-number');
-        
-        fetch(`/Saves/ToggleSave/${type}/${id}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-            },
-            credentials: 'same-origin'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.needLogin) {
-                window.location.href = '/Account/Login';
-                return;
-            }
-            if (data.success) {
-                if (data.isSaved) {
-                    saveBtn.classList.add('saved');
-                } else {
-                    saveBtn.classList.remove('saved');
-                }
-                saveCountSpan.textContent = data.saveCount;
-            } else {
-                alert(data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Có lỗi xảy ra khi thực hiện thao tác. Vui lòng thử lại sau.');
-        });
-    }
-
-    // Close menus when clicking outside
-    document.addEventListener('click', function(event) {
-        if (!event.target.closest('.post-actions') &&
-            !event.target.closest('.document-actions') &&
-            !event.target.closest('.topic-actions')) {
-            document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(menu => {
-                menu.classList.remove('show');
-            });
-        }
-    });
-
-    // Prevent menu from closing when clicking inside
-    document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(menu => {
-        menu.addEventListener('click', function(event) {
-            event.stopPropagation();
-        });
-    });
-
-    function getRoleText(role) {
-        switch (role) {
-            case 'Lecturer': return 'Giảng viên, CVHT';
-            case 'Admin': return 'Nhân viên';
-            case 'Student': return 'Sinh viên';
-            default: return 'Người dùng';
-        }
-    }
-
-    function createTopicCommentElement(comment) {
-        return `
-            <div class="comment-item d-flex mb-3" id="comment-${comment.id}">
-                <img src="${comment.avatar}" alt="Avatar" class="comment-avatar me-2" />
-                <div class="comment-body">
-                    <div class="comment-header d-flex justify-content-between">
-                        <div>
-                            <strong class="text-primary">
-                                ${comment.username} –
-                                <span class="role">${getRoleText(comment.role)}</span>
-                            </strong>
-                        </div>
-                        <small class="text-muted">${comment.createdAt}</small>
-                    </div>
-                    <div class="comment-content">
-                        ${comment.content}
-                        ${comment.imageUrl ? `<div class='comment-image'><img src='${comment.imageUrl}' alt='Ảnh bình luận' /></div>` : ''}
-                    </div>
-                    <div class="comment-actions">
-                        <button class="custom-reply-btn" onclick="toggleReplyForm('${comment.id}')">
-                            <i class="fas fa-reply"></i> Trả lời
-                        </button>
-                    </div>
-                    <div class="reply-form mt-2" id="reply-form-${comment.id}" style="display: none;">
-                        <form onsubmit="submitTopicReply(event, ${comment.id})" enctype="multipart/form-data">
-                             <input type="hidden" name="TopicId" value="@Model.TopicId" />
-                             <input type="hidden" name="ParentCommentId" value="${comment.id}" />
-                             @Html.AntiForgeryToken()
-                            <div class="mb-2">
-                                <textarea id="replyContent-${comment.id}" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
-                            </div>
-                            <div class="mb-2">
-                                <input type="file" id="replyImage-${comment.id}" class="form-control" accept="image/*" />
-                            </div>
-                            <div class="d-flex justify-content-end">
-                                <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('${comment.id}')">Hủy</button>
-                                <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
-                            </div>
-                        </form>
-                    </div>
-                     <div class="nested-replies" id="replies-${comment.id}"></div>
-                </div>
-            </div>
-        `;
-    }
-
-    function createTopicReplyElement(reply, topicId, level = 1) {
-        const globalToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
-        const levelClass = level === 1 ? '' : 'reply-level-2';
-        return `
-            <div class="reply-item ${levelClass}" id="reply-${reply.id}">
-                <div class="reply-line"></div>
-                <div class="d-flex">
-                    <img src="${reply.avatar}" alt="Avatar" class="reply-avatar" />
-                    <div class="reply-content">
-                        <div class="reply-header">
-                            <strong class="reply-username">
-                                ${reply.username} –
-                                <span class="role">${getRoleText(reply.role)}</span>
-                            </strong>
-                        </div>
-                        <small class="reply-time">${reply.createdAt}</small>
-                    </div>
-                    <div class="reply-text">
-                        ${reply.content}
-                        ${reply.imageUrl ? `<div class='reply-image'><img src='${reply.imageUrl}' alt='Ảnh phản hồi' /></div>` : ''}
-                    </div>
-                    <div class="reply-actions">
-                        <button class="custom-reply-btn" onclick="toggleReplyForm('${reply.id}')">
-                            <i class="fas fa-reply"></i> Trả lời
-                        </button>
-                    </div>
-                    <div class="reply-form mt-2" id="reply-form-${reply.id}" style="display: none;">
-                            <form class="nested-reply-form" onsubmit="submitTopicReply(event, ${reply.id})" enctype="multipart/form-data">
-                                <input type="hidden" name="ParentCommentId" value="${reply.id}" />
-                                <input type="hidden" name="TopicId" value="@Model.TopicId" />
-                                <input type="hidden" name="__RequestVerificationToken" value="${globalToken}" />
-                                <div class="mb-2">
-                                    <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
-                                </div>
-                                <div class="mb-2">
-                                    <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
-                                </div>
-                                <div class="d-flex justify-content-end">
-                                    <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('${reply.id}')">Hủy</button>
-                                    <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="nested-replies" id="replies-${reply.id}"></div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-
-    async function submitTopicComment(event, topicId) {
-        event.preventDefault();
-        const content = document.getElementById(`commentContent-${topicId}`).value.trim();
-        const imageInput = document.getElementById(`commentImage-${topicId}`);
-        const image = imageInput.files[0];
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        if (!content) {
-            alert("Vui lòng nhập nội dung bình luận.");
-            return;
-        }
-        const formData = new FormData();
-        formData.append("Content", content);
-        formData.append("TopicId", topicId);
-        if (image) formData.append("ImageUpload", image);
-        try {
-            const response = await fetch('/Comments/Create', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'RequestVerificationToken': token,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-            const result = await response.json();
-            if (result.success) {
-                const commentList = document.querySelector(`#comment-block-${topicId} .comments-list`);
-                if (commentList) {
-                    // Use the updated createTopicCommentElement to include reply structure
-                    commentList.insertAdjacentHTML('afterbegin', createTopicCommentElement(result.comment));
-                }
-                document.getElementById(`commentContent-${topicId}`).value = '';
-                imageInput.value = '';
-            } else {
-                alert(result.message || 'Gửi bình luận thất bại.');
-            }
-        } catch (err) {
-            console.error(err);
-            alert('Lỗi gửi bình luận.');
-        }
-    }
-
-    async function submitTopicReply(event, parentCommentId) {
-        event.preventDefault();
-        const form = event.target;
-        const formData = new FormData(form);
-        const topicId = form.querySelector('input[name="TopicId"]').value;
-        const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
-        const token = tokenInput ? tokenInput.value : '';
-
-        // Append necessary data for controller
-        formData.append("ParentCommentId", parentCommentId);
-        formData.append("TopicId", topicId);
-
-        try {
-            const response = await fetch('/Comments/CreateResponse', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'RequestVerificationToken': token,
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                let repliesContainer = document.getElementById('replies-' + parentCommentId);
-                if (!repliesContainer) {
-                     // This part is for nested replies structure, ensure it matches CSS
-                    const parentElement = document.getElementById('reply-' + parentCommentId) || document.getElementById('comment-' + parentCommentId);
-                    if (parentElement) {
-                        const replyContent = parentElement.querySelector('.reply-content') || parentElement.querySelector('.comment-body');
-                        if (replyContent) {
-                            repliesContainer = document.createElement('div');
-                            repliesContainer.className = 'nested-replies'; // Use the correct class
-                            repliesContainer.id = 'replies-' + parentCommentId;
-                            replyContent.appendChild(repliesContainer);
-                        }
-                    }
-                }
-
-                // Determine reply level (optional, based on your CSS structure)
-                let level = 1;
-                const parentReply = document.getElementById('reply-' + parentCommentId); // Check if parent is a reply
-                if (parentReply) {
-                     // If the parent is a reply, the current reply is level 2 or deeper
-                     // You might need more complex logic here if you have more than 2 levels
-                    level = 2; 
-                }
-
-                if (repliesContainer) {
-                    // Use createTopicReplyElement to render the new reply
-                    repliesContainer.insertAdjacentHTML('beforeend', createTopicReplyElement(result.reply, topicId, level));
-                }
-
-                // Reset the specific reply form
-                const replyForm = document.getElementById('reply-form-' + parentCommentId);
-                if (replyForm) {
-                    replyForm.reset();
-                }
-                toggleReplyForm(parentCommentId);
-
-            } else {
-                alert(result.message || 'Có lỗi xảy ra khi thêm phản hồi');
-            }
-        } catch (error) {
-            console.error(error);
-            alert('Có lỗi xảy ra khi thêm phản hồi');
-        }
-    }
-</script>
 
 <style>
     .topic-announcement {
@@ -739,23 +301,23 @@
         cursor: pointer;
     }
 
-    .custom-reply-btn:hover {
-        text-decoration: underline;
-        color: #a000a0;
-    }
+        .custom-reply-btn:hover {
+            text-decoration: underline;
+            color: #a000a0;
+        }
 
     .timetable-image {
         text-align: center;
         margin-top: 15px;
     }
 
-    .timetable-image img {
-        max-width: 80%;
-        max-height: 300px;
-        object-fit: contain;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    }
+        .timetable-image img {
+            max-width: 80%;
+            max-height: 300px;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
 
     .comment-item {
         display: flex;
@@ -819,21 +381,21 @@
         transition: all 0.2s ease;
     }
 
-    .action-btn:hover {
-        background-color: #f0f2f5;
-    }
+        .action-btn:hover {
+            background-color: #f0f2f5;
+        }
 
-    .action-btn i {
-        font-size: 18px;
-    }
+        .action-btn i {
+            font-size: 18px;
+        }
 
     .like-btn.liked {
         color: #e0245e;
     }
 
-    .like-btn.liked i {
-        animation: likeAnimation 0.3s ease;
-    }
+        .like-btn.liked i {
+            animation: likeAnimation 0.3s ease;
+        }
 
     .comment-btn:hover {
         color: #1877f2;
@@ -845,9 +407,17 @@
     }
 
     @@ keyframes likeAnimation {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.2); }
-        100% { transform: scale(1); }
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.2);
+        }
+
+        100% {
+            transform: scale(1);
+        }
     }
 
     .reply-toggle {
@@ -877,40 +447,35 @@
         transition: background-color 0.2s ease;
     }
 
-    .btn-purple:hover {
-        background-color: #166fe5;
-        color: white;
-    }
+        .btn-purple:hover {
+            background-color: #166fe5;
+            color: white;
+        }
 
+    .reply-item[data-level="1"] {
+        margin-left: 0 !important;
+    }
+    .reply-item[data-level="2"] {
+        margin-left: 45px !important;
+    }
+    .reply-item[data-level="3"],
+    .reply-item[data-level="4"],
+    .reply-item[data-level="5"],
+    .reply-item[data-level="6"] {
+        margin-left: 45px !important;
+    }
+    .reply-item[data-level="3"] .reply-line,
+    .reply-item[data-level="4"] .reply-line,
+    .reply-item[data-level="5"] .reply-line,
+    .reply-item[data-level="6"] .reply-line {
+        display: none !important;
+    }
     .nested-replies {
-        margin-left: 45px;
-        position: relative;
-        padding-left: 2px;
+        margin-left: 0 !important;
+        padding-left: 0 !important;
     }
-
     .reply-item {
-        position: relative;
-        margin-top: 12px;
-        padding-left: 16px;
-    }
-
-    .reply-line {
-        position: absolute;
-        left: -20px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background-color: #e0e0e0;
-    }
-
-    .reply-line:before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 20px;
-        width: 16px;
-        height: 2px;
-        background-color: #e0e0e0;
+        padding-left: 0 !important;
     }
 
     .reply-avatar {
@@ -952,12 +517,12 @@
         border-radius: 8px;
     }
 
-    .nested-reply-form textarea {
-        background-color: #fff;
-        border: 1px solid #ccd0d5;
-        border-radius: 6px;
-        padding: 8px 12px;
-    }
+        .nested-reply-form textarea {
+            background-color: #fff;
+            border: 1px solid #ccd0d5;
+            border-radius: 6px;
+            padding: 8px 12px;
+        }
 
     .comment-image img,
     .reply-image img {
@@ -1006,9 +571,9 @@
         height: 32px;
     }
 
-    .three-dots-btn:hover {
-        background-color: #f0f2f5;
-    }
+        .three-dots-btn:hover {
+            background-color: #f0f2f5;
+        }
 
     .topic-menu {
         position: absolute;
@@ -1023,9 +588,9 @@
         z-index: 1001;
     }
 
-    .topic-menu.show {
-        display: block !important;
-    }
+        .topic-menu.show {
+            display: block !important;
+        }
 
     .menu-item {
         display: flex;
@@ -1040,48 +605,98 @@
         white-space: nowrap;
     }
 
-    .menu-item i {
-        width: 16px;
-    }
+        .menu-item i {
+            width: 16px;
+        }
 
-    .menu-item:hover {
-        background-color: #f0f2f5;
-        text-decoration: none;
-    }
+        .menu-item:hover {
+            background-color: #f0f2f5;
+            text-decoration: none;
+        }
 
-    .menu-item.delete {
-        color: #dc3545;
-    }
+        .menu-item.delete {
+            color: #dc3545;
+        }
 
-    .menu-item.delete:hover {
-        background-color: #ffebee;
-        color: #dc3545;
-        text-decoration: none;
-    }
-
-    .reply-level-1 {
-        margin-left: 0;
-    }
-
-    .reply-level-2 {
-        margin-left: 20px;
-    }
+            .menu-item.delete:hover {
+                background-color: #ffebee;
+                color: #dc3545;
+                text-decoration: none;
+            }
 
     .save-btn {
         color: #65676b;
     }
 
-    .save-btn.saved {
-        color: #1877f2;
-    }
+        .save-btn.saved {
+            color: #1877f2;
+        }
 
-    .save-btn.saved i {
-        animation: saveAnimation 0.3s ease;
-    }
+            .save-btn.saved i {
+                animation: saveAnimation 0.3s ease;
+            }
 
     @@keyframes saveAnimation {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.2); }
-        100% { transform: scale(1); }
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.2);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .comment-input {
+        border-radius: 20px;
+        border: 1px solid #ccc;
+        padding: 10px 16px;
+        font-size: 1rem;
+        background: #f9f9fb;
+        box-shadow: none;
+        outline: none;
+        resize: none;
+        transition: border 0.2s;
+    }
+    .comment-input:focus {
+        border: 1.5px solid #a259c3;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(162,89,195,0.08);
+    }
+    .comment-image-label {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #a259c3;
+        font-size: 22px;
+        cursor: pointer;
+        z-index: 2;
+        background: #fff;
+        border-radius: 50%;
+        padding: 2px 4px;
+        transition: background 0.2s;
+    }
+    .comment-image-label:hover {
+        background: #f3e6fa;
+    }
+    .comment-submit-btn {
+        background: linear-gradient(90deg, #a259c3 0%, #7b2ff2 100%);
+        color: #fff;
+        border: none;
+        border-radius: 20px;
+        padding: 7px 22px;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 4px;
+        box-shadow: 0 2px 8px rgba(162,89,195,0.08);
+        transition: background 0.2s;
+    }
+    .comment-submit-btn:hover {
+        background: linear-gradient(90deg, #7b2ff2 0%, #a259c3 100%);
+        color: #fff;
     }
 </style>

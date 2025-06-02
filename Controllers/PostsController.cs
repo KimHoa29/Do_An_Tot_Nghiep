@@ -26,43 +26,41 @@ namespace Do_An_Tot_Nghiep.Controllers
             {
                 return RedirectToAction("Login", "Account");
             }
-            else
+
+            var query = _context.Posts
+                .Include(t => t.User)
+                .Include(t => t.PostGroups)
+                .Include(t => t.PostUsers)
+                .Include(t => t.CommentPosts)
+                    .ThenInclude(c => c.User)
+                .AsQueryable();
+
+            // Tìm kiếm
+            if (!string.IsNullOrEmpty(searchString))
             {
-                var query = _context.Posts
-                    .Include(t => t.User)
-                    .Include(t => t.PostGroups)
-                    .Include(t => t.PostUsers)
-                    .Include(t => t.CommentPosts)
-                        .ThenInclude(c => c.User)
-                    .AsQueryable();
-
-                // Tìm kiếm
-                if (!string.IsNullOrEmpty(searchString))
-                {
-                    query = query.Where(t => t.Title.Contains(searchString) || t.Content.Contains(searchString));
-                }
-
-                // Lấy danh sách các nhóm mà người dùng thuộc về
-                var userGroupIds = _context.GroupUsers
-                    .Where(gu => gu.UserId.ToString() == CurrentUserID)
-                    .Select(gu => gu.GroupId)
-                    .ToList();
-
-                // Lọc quyền truy cập
-                if (CurrentUserRole != "Admin")
-                {
-                    query = query.Where(t =>
-                        t.UserId.ToString() == CurrentUserID ||
-                        t.VisibilityType == "public" ||
-                        (t.VisibilityType == "private" && t.UserId.ToString() == CurrentUserID) ||
-                        (t.VisibilityType == "group" && t.PostGroups.Any(g => userGroupIds.Contains(g.GroupId))) ||
-                        (t.VisibilityType == "custom" && t.PostUsers.Any(u => u.UserId.ToString() == CurrentUserID))
-                    );
-                }
-
-                var result = await query.ToListAsync();
-                return View(result);
+                query = query.Where(t => t.Title.Contains(searchString) || t.Content.Contains(searchString));
             }
+
+            // Lấy danh sách các nhóm mà người dùng thuộc về
+            var userGroupIds = _context.GroupUsers
+                .Where(gu => gu.UserId.ToString() == CurrentUserID)
+                .Select(gu => gu.GroupId)
+                .ToList();
+
+            // Lọc quyền truy cập
+            if (CurrentUserRole != "Admin")
+            {
+                query = query.Where(t =>
+                    t.UserId.ToString() == CurrentUserID ||
+                    t.VisibilityType == "public" ||
+                    (t.VisibilityType == "private" && t.UserId.ToString() == CurrentUserID) ||
+                    (t.VisibilityType == "group" && t.PostGroups.Any(g => userGroupIds.Contains(g.GroupId))) ||
+                    (t.VisibilityType == "custom" && t.PostUsers.Any(u => u.UserId.ToString() == CurrentUserID))
+                );
+            }
+
+            var result = await query.ToListAsync();
+            return View(result);
         }
 
         // GET: Posts/Create
@@ -72,28 +70,36 @@ namespace Do_An_Tot_Nghiep.Controllers
             {
                 return RedirectToAction("Login", "Account");
             }
-            else
-            {
-                ViewBag.Users = new MultiSelectList(_context.Users.Where(u => u.Role == "Lecturer").ToList(), "UserId", "Username");
-                ViewBag.Groups = new MultiSelectList(_context.Groups.ToList(), "GroupId", "GroupName");
-                ViewBag.VisibilityTypes = new SelectList(new[] {
-                    new { Value = "public", Text = "Công khai" },
-                    new { Value = "private", Text = "Riêng tư" },
-                    new { Value = "group", Text = "Theo nhóm" },
-                    new { Value = "custom", Text = "Tùy chọn người dùng" }
-                }, "Value", "Text");
-                ViewBag.Username = CurrentUserName;
-                ViewBag.Role = CurrentUserRole;
-                var currentUser = await _context.Users.FirstOrDefaultAsync(m => m.UserId.ToString().Equals(CurrentUserID));
-                ViewBag.Avatar = currentUser?.Avatar;
-                return View();
-            }
+
+            ViewBag.Users = new MultiSelectList(_context.Users.Where(u => u.Role == "Lecturer").ToList(), "UserId", "Username");
+            // Lấy danh sách nhóm mà người dùng hiện tại là thành viên
+            var userGroups = await _context.GroupUsers
+                .Where(gu => gu.UserId.ToString() == CurrentUserID)
+                .Select(gu => gu.Group)
+                .ToListAsync();
+            ViewBag.Groups = new MultiSelectList(userGroups, "GroupId", "GroupName");
+            ViewBag.VisibilityTypes = new SelectList(new[] {
+                new { Value = "public", Text = "Công khai" },
+                new { Value = "private", Text = "Riêng tư" },
+                new { Value = "group", Text = "Theo nhóm" },
+                new { Value = "custom", Text = "Tùy chọn người dùng" }
+            }, "Value", "Text");
+            ViewBag.Username = CurrentUserName;
+            ViewBag.Role = CurrentUserRole;
+            var currentUser = await _context.Users.FirstOrDefaultAsync(m => m.UserId.ToString().Equals(CurrentUserID));
+            ViewBag.Avatar = currentUser?.Avatar;
+            return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Post post, IFormFile? imageFile, IFormFile? documentFile, int[] selectedGroups, int[] selectedUsers, int[] mentionedUsers)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             ViewBag.Users = new MultiSelectList(_context.Users.Where(u => u.Role == "Lecturer").ToList(), "UserId", "Username", selectedUsers);
             ViewBag.Groups = new MultiSelectList(_context.Groups.ToList(), "GroupId", "GroupName", selectedGroups);
             ViewBag.VisibilityTypes = new SelectList(new[] {
@@ -210,6 +216,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         // GET: Posts/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null)
             {
                 return NotFound();
@@ -226,8 +237,20 @@ namespace Do_An_Tot_Nghiep.Controllers
                 return NotFound();
             }
 
+            // Kiểm tra quyền chỉnh sửa
+            if (CurrentUserRole != "Admin" && post.UserId.ToString() != CurrentUserID)
+            {
+                TempData["Error"] = "Bạn không có quyền chỉnh sửa bài viết này.";
+                return RedirectToAction(nameof(Index));
+            }
+
             ViewBag.Users = new MultiSelectList(_context.Users.Where(u => u.Role == "Lecturer").ToList(), "UserId", "Username", post.PostUsers.Select(tu => tu.UserId));
-            ViewBag.Groups = new MultiSelectList(_context.Groups.ToList(), "GroupId", "GroupName", post.PostGroups.Select(tg => tg.GroupId));
+            // Lấy danh sách nhóm mà người dùng hiện tại là thành viên
+            var userGroups = await _context.GroupUsers
+                .Where(gu => gu.UserId.ToString() == CurrentUserID)
+                .Select(gu => gu.Group)
+                .ToListAsync();
+            ViewBag.Groups = new MultiSelectList(userGroups, "GroupId", "GroupName", post.PostGroups.Select(tg => tg.GroupId));
             ViewBag.VisibilityTypes = new SelectList(new[] {
                 new { Value = "public", Text = "Công khai" },
                 new { Value = "private", Text = "Riêng tư" },
@@ -247,6 +270,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Post model, IFormFile? imageFile, IFormFile? documentFile, int[] selectedUsers, int[] selectedGroups, int[] mentionedUsers)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id != model.PostId)
                 return NotFound();
 
@@ -258,6 +286,13 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             if (post == null)
                 return NotFound();
+
+            // Kiểm tra quyền chỉnh sửa
+            if (CurrentUserRole != "Admin" && post.UserId.ToString() != CurrentUserID)
+            {
+                TempData["Error"] = "Bạn không có quyền chỉnh sửa bài viết này.";
+                return RedirectToAction(nameof(Index));
+            }
 
             post.Title = model.Title;
             post.Content = model.Content;
@@ -336,6 +371,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         // GET: Posts/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null)
             {
                 return NotFound();
@@ -353,6 +393,13 @@ namespace Do_An_Tot_Nghiep.Controllers
                 return NotFound();
             }
 
+            // Kiểm tra quyền xóa
+            if (CurrentUserRole != "Admin" && post.UserId.ToString() != CurrentUserID)
+            {
+                TempData["Error"] = "Bạn không có quyền xóa bài viết này.";
+                return RedirectToAction(nameof(Index));
+            }
+
             return View(post);
         }
 
@@ -360,6 +407,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var post = await _context.Posts
                 .Include(p => p.PostMentions)
                 .Include(p => p.PostUsers)
@@ -370,9 +422,20 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             if (post != null)
             {
+                // Kiểm tra quyền xóa
+                if (CurrentUserRole != "Admin" && post.UserId.ToString() != CurrentUserID)
+                {
+                    TempData["Error"] = "Bạn không có quyền xóa bài viết này.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 // Xóa các like liên quan
                 var likes = _context.LikePosts.Where(l => l.PostId == post.PostId);
                 _context.LikePosts.RemoveRange(likes);
+
+                // Xóa các saves liên quan
+                var saves = _context.Saves.Where(s => s.PostId == post.PostId);
+                _context.Saves.RemoveRange(saves);
 
                 // Xóa các file vật lý nếu có
                 if (!string.IsNullOrEmpty(post.ImageUrl))
@@ -461,10 +524,33 @@ namespace Do_An_Tot_Nghiep.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteMultiple(int[] selectedPosts)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (selectedPosts == null || selectedPosts.Length == 0)
             {
                 TempData["ErrorMessage"] = "Bạn chưa chọn bài viết nào để xóa.";
                 return RedirectToAction("Index");
+            }
+
+            // Kiểm tra quyền xóa cho từng bài viết
+            if (CurrentUserRole != "Admin")
+            {
+                var posts = await _context.Posts
+                    .Where(p => selectedPosts.Contains(p.PostId))
+                    .ToListAsync();
+
+                var unauthorizedPosts = posts
+                    .Where(p => p.UserId.ToString() != CurrentUserID)
+                    .ToList();
+
+                if (unauthorizedPosts.Any())
+                {
+                    TempData["ErrorMessage"] = "Bạn không có quyền xóa một số bài viết đã chọn.";
+                    return RedirectToAction("Index");
+                }
             }
 
             foreach (var id in selectedPosts)
@@ -480,6 +566,10 @@ namespace Do_An_Tot_Nghiep.Controllers
                     // Xóa các like liên quan
                     var likes = _context.LikePosts.Where(l => l.PostId == post.PostId);
                     _context.LikePosts.RemoveRange(likes);
+
+                    // Xóa các saves liên quan
+                    var saves = _context.Saves.Where(s => s.PostId == post.PostId);
+                    _context.Saves.RemoveRange(saves);
 
                     // Xóa files
                     if (!string.IsNullOrEmpty(post.ImageUrl))
@@ -530,7 +620,7 @@ namespace Do_An_Tot_Nghiep.Controllers
         [HttpPost]
         public async Task<IActionResult> ToggleLike(int id)
         {
-            if (!IsLogin || string.IsNullOrEmpty(CurrentUserID))
+            if (!IsLogin)
             {
                 return Json(new { success = false, message = "Vui lòng đăng nhập để thích bài viết" });
             }
@@ -584,6 +674,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         // GET: Posts/Details/5
         public async Task<IActionResult> Details(int? id)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null)
             {
                 return NotFound();

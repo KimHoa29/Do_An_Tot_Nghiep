@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "Chat với Gemini";
+    ViewData["Title"] = "Chatbot";
     var userName = ViewBag.CurrentUserName ?? "bạn";
 }
 
@@ -353,6 +353,24 @@
             0% { box-shadow: 0 0 0 0 #1976d233; }
             70% { box-shadow: 0 0 0 10px #1976d200; }
             100% { box-shadow: 0 0 0 0 #1976d233; }
+        }
+
+        /* Styles for document links */
+        .document-link {
+            display: inline-block;
+            color: #4f8cff;
+            text-decoration: none;
+            margin: 4px 0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(79, 140, 255, 0.1);
+            transition: all 0.2s;
+        }
+
+        .document-link:hover {
+            background: rgba(79, 140, 255, 0.2);
+            color: #2d6cdf;
+            text-decoration: underline;
         }
     </style>
 } 

@@ -2,13 +2,44 @@
 
 @{
     ViewData["Title"] = "Thông tin giảng viên";
+    var pageSize = 10; // Số sinh viên trên mỗi trang
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var totalPages = ViewBag.TotalPages ?? 1;
 }
+
+<style>
+    .lecturer-name {
+        color: #800080;
+    }
+    .pagination .page-link {
+        color: #e67e22;
+        border-color: #e67e22;
+    }
+    .pagination .page-item.active .page-link {
+        background-color: #e67e22;
+        border-color: #e67e22;
+        color: white;
+    }
+    .btn-add-student {
+        color: #e67e22;
+        border-color: #e67e22;
+        background-color: transparent;
+    }
+    .btn-add-student:hover {
+        color: white;
+        background-color: #e67e22;
+        border-color: #e67e22;
+    }
+    .lecturer-title {
+        font-size: 1.5rem;
+    }
+</style>
 
 <div class="container-fluid mt-4">
     <div class="card shadow-lg rounded-4">
         <div class="card-header py-3">
             <div class="d-flex justify-content-between align-items-center">
-                <h3 class="card-title mb-0">
+                <h3 class="card-title mb-0 lecturer-title">
                     <i class="fas fa-user-tie me-2"></i>Thông tin giảng viên
                 </h3>
                 <div>
@@ -22,8 +53,12 @@
         <div class="card-body p-4">
             <div class="row mb-4">
                 <div class="col-md-3 text-center">
-                    <img src="@Model.User.Avatar" alt="Avatar" class="rounded-circle mb-3" style="width: 200px; height: 200px; object-fit: cover;" />
-                    <h4 class="text-primary">@Model.FullName</h4>
+                    <img src="@(Model.User?.Avatar ?? "/uploads/img/avatar/default-avatar.jpg")"  
+                         alt="Avatar" 
+                         class="rounded-circle mb-3" 
+                         style="width: 200px; height: 200px; object-fit: cover;" 
+                         onerror="this.src='/images/default-avatar.png'" />
+                    <h4 class="lecturer-name">@Model.FullName</h4>
                     <p class="text-muted mb-3">Mã giảng viên: @Model.UserId</p>
                 </div>
 
@@ -90,7 +125,7 @@
                         <h5 class="text-primary mb-0">
                             <i class="fas fa-user-graduate me-2"></i>Danh sách sinh viên quản lý
                         </h5>
-                        <a href="@Url.Action("AddStudent", new { lecturerId = Model.LecturerId })" class="btn btn-primary btn-sm">
+                        <a href="@Url.Action("AddStudent", new { lecturerId = Model.LecturerId })" class="btn btn-add-student btn-sm">
                             <i class="fas fa-user-plus me-2"></i>Thêm sinh viên
                         </a>
                     </div>
@@ -99,6 +134,7 @@
                          <input type="hidden" name="id" value="@Model.LecturerId" />
                         <div class="input-group">
                             <input type="text" name="searchString" class="form-control" placeholder="Tìm kiếm sinh viên..." value="@ViewBag.CurrentSearchString">
+                            <input type="hidden" name="page" value="1" />
                             <button class="btn btn-outline-secondary" type="submit"><i class="fas fa-search"></i> Tìm kiếm</button>
                              <a href="@Url.Action("Details", new { id = Model.LecturerId })" class="btn btn-outline-secondary">Hiển thị tất cả</a>
                         </div>
@@ -126,7 +162,7 @@
                                                 <div class="d-flex align-items-center">
                                                     <div>
                                                         <div class="fw-bold">@student.FullName</div>
-                                                        <small class="text-muted">Mã SV: @student.StudentId</small>
+                                                        <small class="text-muted">Mã SV: @student.UserId</small>
                                                     </div>
                                                 </div>
                                             </td>
@@ -148,6 +184,34 @@
                                     }
                                 </tbody>
                             </table>
+                        </div>
+
+                        <!-- Phân trang -->
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <div class="text-muted">
+                                Hiển thị @(((currentPage - 1) * pageSize) + 1) - @(Math.Min(currentPage * pageSize, ViewBag.TotalItems ?? 0)) 
+                                của @(ViewBag.TotalItems ?? 0) sinh viên
+                            </div>
+                            <nav aria-label="Page navigation">
+                                <ul class="pagination mb-0">
+                                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                        <a class="page-link" href="@Url.Action("Details", new { id = Model.LecturerId, page = currentPage - 1, searchString = ViewBag.CurrentSearchString })">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                    @for (int i = 1; i <= totalPages; i++)
+                                    {
+                                        <li class="page-item @(i == currentPage ? "active" : "")">
+                                            <a class="page-link" href="@Url.Action("Details", new { id = Model.LecturerId, page = i, searchString = ViewBag.CurrentSearchString })">@i</a>
+                                        </li>
+                                    }
+                                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                        <a class="page-link" href="@Url.Action("Details", new { id = Model.LecturerId, page = currentPage + 1, searchString = ViewBag.CurrentSearchString })">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
                         </div>
                     }
                     else

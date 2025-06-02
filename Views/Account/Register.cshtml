@@ -33,6 +33,9 @@
 
         <form asp-action="Register" asp-controller="Account" method="post">
             <div class="input-group">
+                <input type="number" name="UserId" placeholder="Mã tài khoản" required>
+            </div>
+            <div class="input-group">
                 <input type="text" name="Username" placeholder="Tên đăng nhập" required>
             </div>
             <div class="input-group">
@@ -52,7 +55,6 @@
             </div>
 
             <button type="submit" class="btn">Đăng ký</button>
-            <p class="switch-auth">Đã có tài khoản? <a asp-action="Login" asp-controller="Account">Đăng nhập ngay</a></p>
         </form>
     </div>
 </body>

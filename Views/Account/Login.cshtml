@@ -58,7 +58,18 @@
 
         <form asp-action="Login" asp-controller="Account" method="post">
             <div class="input-group">
-                <input type="text" name="username" placeholder="Tên đăng nhập" required>
+                <select id="roleSelect" name="role" required onchange="updatePlaceholder()">
+                    <option value="" disabled selected>Vai trò</option>
+                    <option value="Student">🎓 Sinh viên</option>
+                    <option value="Lecturer">🎓 Giảng viên</option>
+                    <option value="Admin">🎓 Quản trị viên</option>
+                </select>
+            </div>
+            <div class="input-group" id="userIdGroup" style="display:none;">
+                <input type="text" name="userId" id="userIdInput" placeholder="Mã sinh viên" autocomplete="username">
+            </div>
+            <div class="input-group" id="usernameGroup" style="display:none;">
+                <input type="text" name="username" id="usernameInput" placeholder="Tên đăng nhập" autocomplete="username">
             </div>
             <div class="input-group">
                 <input type="password" name="password" id="password" placeholder="Mật khẩu" required>
@@ -70,9 +81,8 @@
                     </span>
                 </button>
             </div>
-            <a href="#" class="forgot">Quên mật khẩu?</a>
+            <a asp-action="ForgotPassword" asp-controller="Account" class="forgot">Quên mật khẩu?</a>
             <button type="submit" class="btn">Đăng nhập</button>
-            <p class="switch-auth">Chưa có tài khoản? <a asp-controller="Account" asp-action="Register">Đăng ký ngay</a></p>
         </form>
     </div>
     <script>
@@ -93,6 +103,41 @@
                 eyeClosed.style.display = 'inline';
             }
         }
+        function updatePlaceholder() {
+            var role = document.getElementById('roleSelect').value;
+            var userIdGroup = document.getElementById('userIdGroup');
+            var usernameGroup = document.getElementById('usernameGroup');
+            var input = document.getElementById('userIdInput');
+            if (role === 'Student') {
+                userIdGroup.style.display = '';
+                usernameGroup.style.display = 'none';
+                input.placeholder = 'Mã sinh viên';
+                input.type = 'text';
+                input.required = true;
+                document.getElementById('usernameInput').required = false;
+            } else if (role === 'Lecturer') {
+                userIdGroup.style.display = '';
+                usernameGroup.style.display = 'none';
+                input.placeholder = 'Mã giảng viên';
+                input.type = 'text';
+                input.required = true;
+                document.getElementById('usernameInput').required = false;
+            } else if (role === 'Admin') {
+                userIdGroup.style.display = 'none';
+                usernameGroup.style.display = '';
+                document.getElementById('usernameInput').placeholder = 'Tên đăng nhập';
+                document.getElementById('usernameInput').required = true;
+                input.required = false;
+            } else {
+                userIdGroup.style.display = 'none';
+                usernameGroup.style.display = 'none';
+                input.required = false;
+                document.getElementById('usernameInput').required = false;
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePlaceholder();
+        });
     </script>
 </body>
 </html>

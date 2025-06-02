@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Do_An_Tot_Nghiep.Models.Lecturer>
+﻿@model PaginatedList<Do_An_Tot_Nghiep.Models.Lecturer>
 
 @{
     ViewData["Title"] = "Danh sách giảng viên";
@@ -7,90 +7,282 @@
 <head>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
     <link href="~/css/index.css" rel="stylesheet" />
+    <style>
+        .table-navy {
+            background-color: #1a237e;
+            color: white;
+        }
+        .btn-action {
+            transition: all 0.3s ease;
+            padding: 0.4rem 0.6rem;
+            border-radius: 4px;
+        }
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .pagination {
+            margin-top: 1.5rem;
+        }
+        .pagination .page-link {
+            color: #1a237e;
+            border: 1px solid #dee2e6;
+            margin: 0 2px;
+            border-radius: 4px;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #1a237e;
+            border-color: #1a237e;
+        }
+        .search-box {
+            position: relative;
+        }
+        .search-box .form-control {
+            padding-left: 2.5rem;
+            border-radius: 20px;
+        }
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .table thead th {
+            border-bottom: none;
+            padding: 1rem;
+        }
+        .table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+        }
+        .btn-custom, .btn-action, .btn, .btn-success, .btn-danger, .btn-primary {
+            background: transparent !important;
+            border-width: 1px;
+            border-style: solid;
+            border-color: currentColor;
+            color: inherit;
+            box-shadow: none;
+            transition: all 0.3s ease;
+        }
+        .btn-custom:focus, .btn-custom:active, .btn-custom:hover,
+        .btn-action:focus, .btn-action:active, .btn-action:hover,
+        .btn-primary:focus, .btn-primary:active, .btn-primary:hover,
+        .btn-success:focus, .btn-success:active, .btn-success:hover,
+        .btn-danger:focus, .btn-danger:active, .btn-danger:hover {
+            background-color: currentColor !important;
+            color: #fff !important;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .btn-primary {
+            color: #1a237e !important;
+            border-color: #1a237e !important;
+        }
+        .btn-success {
+            color: #388e3c !important;
+            border-color: #388e3c !important;
+        }
+        .btn-danger {
+            color: #d32f2f !important;
+            border-color: #d32f2f !important;
+        }
+        .btn-edit {
+            color: #ffc107 !important;
+            border-color: #ffc107 !important;
+        }
+        .btn-view {
+            color: #00bcd4 !important;
+            border-color: #00bcd4 !important;
+        }
+        .btn-delete {
+            color: #d32f2f !important;
+            border-color: #d32f2f !important;
+        }
+        .btn-edit:focus, .btn-edit:active, .btn-edit:hover {
+            background-color: #ffc107 !important;
+            color: #fff !important;
+        }
+        .btn-view:focus, .btn-view:active, .btn-view:hover {
+            background-color: #00bcd4 !important;
+            color: #fff !important;
+        }
+        .btn-delete:focus, .btn-delete:active, .btn-delete:hover {
+            background-color: #d32f2f !important;
+            color: #fff !important;
+        }
+        .btn-action {
+            border-radius: 4px;
+            padding: 0.4rem 0.6rem;
+        }
+        .btn-custom {
+            border-radius: 20px;
+            padding: 0.3rem 0.8rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        .action-buttons .btn-action {
+            border: none !important;
+        }
+        /* Xóa border đỏ hoặc border custom quanh card/table nếu có */
+        .card, .card-body, .table-responsive {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    </style>
 </head>
 
-<h2 class="text-center text-navy">Danh sách giảng viên</h2>
+<div class="container-fluid py-4">
+    <h2 class="text-center text-navy mb-4">Danh sách giảng viên</h2>
 
-<div class="d-flex justify-content-between align-items-center my-3">
-    <!-- Form tìm kiếm -->
-    <div class="d-flex w-75">
-        <form asp-controller="Lecturers" asp-action="Index" method="get" class="d-flex w-100 gap-2">
-            <input type="text" name="searchString" class="form-control" placeholder="Nhập tên, email hoặc chuyên môn..." style="max-width: 300px;" value="@Context.Request.Query["searchString"]" />
-            <button type="submit" class="btn btn-outline-primary btn-sm shadow">
-                <i class="fas fa-search"></i> Tìm kiếm
-            </button>
-        </form>
-    </div>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <!-- Form tìm kiếm -->
+                <div class="d-flex w-75">
+                    <form asp-controller="Lecturers" asp-action="Index" method="get" class="d-flex w-100 gap-2">
+                        <div class="search-box w-100" style="max-width: 400px;">
+                            <i class="fas fa-search"></i>
+                            <input type="text" name="searchString" class="form-control" placeholder="Nhập tên, email hoặc chức vụ..." value="@Context.Request.Query["searchString"]" />
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-custom">
+                            <i class="fas fa-search"></i> Tìm kiếm
+                        </button>
+                    </form>
+                </div>
 
-    <!-- Nút thêm giảng viên & Xóa đã chọn -->
-    <div class="d-flex gap-2">
-        <a asp-action="Create" class="btn btn-outline-success shadow">
-            <i class="fas fa-plus"></i> Thêm giảng viên
-        </a>
-        <button type="submit" form="deleteForm" class="btn btn-outline-danger shadow" id="deleteSelectedBtn" disabled onclick="return confirm('Bạn có chắc chắn muốn xóa các giảng viên đã chọn?')">
-            <i class="fas fa-trash"></i> Xóa đã chọn
-        </button>
+                <!-- Nút thêm giảng viên & Xóa đã chọn -->
+                <div class="d-flex gap-2">
+                    <a asp-action="Create" class="btn btn-success btn-custom">
+                        <i class="fas fa-plus"></i> Thêm giảng viên
+                    </a>
+                    <button type="submit" form="deleteForm" class="btn btn-danger btn-custom" id="deleteSelectedBtn" disabled onclick="return confirm('Bạn có chắc chắn muốn xóa các giảng viên đã chọn?')">
+                        <i class="fas fa-trash"></i> Xóa đã chọn
+                    </button>
+                </div>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="alert alert-warning text-center">Chưa có dữ liệu giảng viên.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <form asp-controller="Lecturers" asp-action="DeleteSelected" method="post" id="deleteForm">
+                        <table class="table table-hover table-bordered text-center align-middle">
+                            <thead class="table-navy">
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll" /></th>
+                                    <th>Mã giảng viên</th>
+                                    <th>Họ và tên</th>
+                                    <th>Chức vụ</th>
+                                    <th>Khoa</th>
+                                    <th>SL sinh viên</th>
+                                    <th>Số điện thoại</th>
+                                    <th>Email</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    <tr class="table-light">
+                                        <td>
+                                            <input type="checkbox" name="selectedLecturers" value="@item.LecturerId" class="selectLecturer" />
+                                        </td>
+                                        <td>@item.UserId</td>
+                                        <td>@item.FullName</td>
+                                        <td>@item.Position</td>
+                                        <td>@item.Department</td>
+                                        <td>@item.StudentCount</td>
+                                        <td>@item.Phone</td>
+                                        <td>@item.Email</td>
+                                        <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td class="text-center action-buttons">
+                                            <a asp-action="Edit" asp-route-id="@item.LecturerId" class="btn-action btn-edit" title="Sửa">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a asp-action="Details" asp-route-id="@item.LecturerId" class="btn-action btn-view" title="Chi tiết">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@item.LecturerId" class="btn-action btn-delete" title="Xóa" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </form>
+                </div>
+
+                <!-- Phân trang -->
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        @{
+                            var prevDisabled = !Model.HasPreviousPage ? "disabled" : "";
+                            var nextDisabled = !Model.HasNextPage ? "disabled" : "";
+                            int totalPages = Model.TotalPages;
+                            int currentPage = Model.PageIndex;
+                        }
+                        <li class="page-item @prevDisabled">
+                            <a asp-action="Index"
+                               asp-route-pageNumber="@(Model.PageIndex - 1)"
+                               asp-route-searchString="@Context.Request.Query["searchString"]"
+                               class="page-link">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                        @if (totalPages > 1)
+                        {
+                            // Trang đầu
+                            <li class="page-item @(1 == currentPage ? "active" : "")">
+                                <a asp-action="Index" asp-route-pageNumber="1" asp-route-searchString="@Context.Request.Query["searchString"]" class="page-link">1</a>
+                            </li>
+                            // Dấu ... nếu cần
+                            if (currentPage > 4)
+                            {
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            }
+                            // Các trang gần trang hiện tại
+                            for (int i = Math.Max(2, currentPage - 2); i <= Math.Min(totalPages - 1, currentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                    <a asp-action="Index" asp-route-pageNumber="@i" asp-route-searchString="@Context.Request.Query["searchString"]" class="page-link">@i</a>
+                                </li>
+                            }
+                            // Dấu ... nếu cần
+                            if (currentPage < totalPages - 3)
+                            {
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            }
+                            // Trang cuối
+                            if (totalPages > 1)
+                            {
+                                <li class="page-item @(totalPages == currentPage ? "active" : "")">
+                                    <a asp-action="Index" asp-route-pageNumber="@totalPages" asp-route-searchString="@Context.Request.Query["searchString"]" class="page-link">@totalPages</a>
+                                </li>
+                            }
+                        }
+                        <li class="page-item @nextDisabled">
+                            <a asp-action="Index"
+                               asp-route-pageNumber="@(Model.PageIndex + 1)"
+                               asp-route-searchString="@Context.Request.Query["searchString"]"
+                               class="page-link">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
     </div>
 </div>
-
-@if (!Model.Any())
-{
-    <div class="alert alert-warning text-center">Chưa có dữ liệu giảng viên.</div>
-}
-else
-{
-    <div class="table-responsive">
-        <form asp-controller="Lecturers" asp-action="DeleteSelected" method="post" id="deleteForm">
-            <table class="table table-hover table-bordered text-center align-middle shadow-sm">
-                <thead class="table-navy">
-                    <tr>
-                        <th><input type="checkbox" id="selectAll" /></th>
-                        <th>Mã giảng viên</th>
-                        <th>Họ và tên</th>
-                        <th>Chức vụ</th>
-                        <th>Khoa</th>
-                        <th>Chuyên môn</th>
-                        <th>SL sinh viên</th>
-                        <th>Số điện thoại</th>
-                        <th>Email</th>
-                        <th>Ngày tạo</th>
-                        <th>Hành động</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model)
-                    {
-                        <tr class="table-light">
-                            <td>
-                                <input type="checkbox" name="selectedLecturers" value="@item.LecturerId" class="selectLecturer" />
-                            </td>
-                            <td>@item.UserId</td>
-                            <td>@item.FullName</td>
-                            <td>@item.Position</td>
-                            <td>@item.Department</td>
-                            <td>@item.Specialization</td>
-                            <td>@item.StudentCount</td>
-                            <td>@item.Phone</td>
-                            <td>@item.Email</td>
-                            <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td class="text-center">
-                                <a asp-action="Edit" asp-route-id="@item.LecturerId" class="btn-sm text-warning" title="Sửa">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a asp-action="Details" asp-route-id="@item.LecturerId" class="btn-sm text-info" title="Chi tiết">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a asp-action="Delete" asp-route-id="@item.LecturerId" class="btn-sm text-danger" title="Xóa" onclick="return confirm('Bạn có chắc chắn muốn xóa?')">
-                                    <i class="fas fa-trash-alt"></i>
-                                </a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </form>
-    </div>
-}
 
 @section Scripts {
     <script>

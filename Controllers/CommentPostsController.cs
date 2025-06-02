@@ -104,6 +104,7 @@ namespace Do_An_Tot_Nghiep.Controllers
                 .Include(c => c.User)
                 .Include(c => c.Post)
                 .FirstOrDefault(m => m.CommentPostId == comment.ParentCommentId);
+            
             comment.PostId = parentComment.PostId;
             if (parentComment.ParentCommentId != null)
             {

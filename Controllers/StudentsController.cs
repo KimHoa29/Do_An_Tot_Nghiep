@@ -23,7 +23,7 @@ namespace Do_An_Tot_Nghiep.Controllers
         }
 
         // GET: Students
-        public async Task<IActionResult> Index(string searchString)
+        public async Task<IActionResult> Index(string searchString, int? pageNumber)
         {
             if (!IsLogin || CurrentUserRole.Equals("Student"))
             {
@@ -36,11 +36,13 @@ namespace Do_An_Tot_Nghiep.Controllers
             if (!string.IsNullOrEmpty(searchString))
             {
                 students = students.Where(s => s.FullName.Contains(searchString)
+                                            || s.Class.Contains(searchString)
                                             || s.Email.Contains(searchString)
                                             || s.Major.Contains(searchString));
             }
 
-            return View(await students.ToListAsync());
+            int pageSize = 10; // Số item trên mỗi trang
+            return View(await PaginatedList<Student>.CreateAsync(students.AsNoTracking(), pageNumber ?? 1, pageSize));
         }
 
 
@@ -98,6 +100,10 @@ namespace Do_An_Tot_Nghiep.Controllers
         // GET: Students/Create
         public IActionResult Create()
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
             return View();
         }
 
@@ -106,8 +112,13 @@ namespace Do_An_Tot_Nghiep.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("UserId,FullName,Class,Major,Email,Phone,CreatedAt")] Student student, IFormFile avatarFile)
+        public async Task<IActionResult> Create([Bind("UserId,FullName,Class,Major,Email,Phone,CreatedAt")] Student student, IFormFile? avatarFile)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (ModelState.IsValid)
             {
                 try
@@ -159,6 +170,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         // GET: Students/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null)
             {
                 return NotFound();
@@ -182,6 +198,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("StudentId,UserId,FullName,Class,Major,Email,Phone,CreatedAt")] Student student, IFormFile? avatarFile)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id != student.StudentId)
             {
                 return NotFound();
@@ -269,6 +290,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         // GET: Students/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null)
             {
                 return NotFound();
@@ -289,6 +315,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var student = await _context.Students.FindAsync(id);
             if (student != null)
             {
@@ -306,6 +337,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         [HttpPost]
         public IActionResult DeleteSelected(int[] selectedStudents)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (selectedStudents == null || selectedStudents.Length == 0)
             {
                 TempData["ErrorMessage"] = "Vui lòng chọn sinh viên để xóa.";

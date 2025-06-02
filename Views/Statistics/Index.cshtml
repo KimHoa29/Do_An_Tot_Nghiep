@@ -319,8 +319,8 @@
                                 fill: true
                             },
                             {
-                                label: 'Bình luận',
-                                data: @Html.Raw(Json.Serialize(ViewBag.CommentActivity ?? new List<int>())),
+                                label: 'Bài đăng',
+                                data: @Html.Raw(Json.Serialize(ViewBag.PostActivity ?? new List<int>())),
                                 borderColor: '#f6c23e',
                                 backgroundColor: 'rgba(246, 194, 62, 0.05)',
                                 tension: 0.3,

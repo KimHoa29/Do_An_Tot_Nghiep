@@ -38,7 +38,7 @@
                         }
                     </div>
                     <div class="reply-actions">
-                        <button class="custom-reply-btn" onclick="toggleReplyForm('@reply.CommentId')">
+                        <button class="custom-reply-btn" onclick="topicToggleReplyForm('@reply.CommentId')">
                             <i class="fas fa-reply"></i> Trả lời
                         </button>
                         <a asp-action="Edit" asp-route-id="@reply.CommentId" class="custom-reply-btn">
@@ -60,7 +60,7 @@
                                 <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
                             </div>
                             <div class="d-flex justify-content-end">
-                                <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@reply.CommentId')">Hủy</button>
+                                <button type="button" class="btn btn-light me-2" onclick="topicToggleReplyForm('@reply.CommentId')">Hủy</button>
                                 <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
                             </div>
                         </form>

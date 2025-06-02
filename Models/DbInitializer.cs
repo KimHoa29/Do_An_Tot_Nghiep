@@ -14,6 +14,7 @@ namespace Do_An_Tot_Nghiep.Data
             {
                 var admin = new User
                 {
+                    UserId = 1,
                     Username = "admin",
                     Password = HashPassword("admin123"),
                     Email = "admin@example.com",

@@ -1,0 +1,72 @@
+@model dynamic
+@{
+    var replies = Model.replies as List<Do_An_Tot_Nghiep.Models.Comment>;
+    int level = Model.level;
+    string replyLevelClass = level == 1 ? "reply-level-1" : "reply-level-2";
+}
+@foreach (var reply in replies)
+{
+    <div class="reply-item @replyLevelClass" data-level="@level" id="topic-reply-@reply.CommentId">
+        @if(level <= 2) { <div class="reply-line"></div> }
+        <div class="d-flex">
+            <img src="@(string.IsNullOrEmpty(reply.User?.Avatar) ? "/css/img/default-avatar.jpg" : reply.User.Avatar)" alt="Avatar" class="reply-avatar" />
+            <div class="reply-content">
+                <div class="reply-header">
+                    <strong class="reply-username">
+                        @reply.User?.Username –
+                        @{
+                            var replyRole = reply.User?.Role;
+                            string replyRoleText = replyRole switch
+                            {
+                                "Lecturer" => "Giảng viên, CVHT",
+                                "Admin" => "Nhân viên",
+                                "Student" => "Sinh viên",
+                                _ => "Người dùng"
+                            };
+                        }
+                        <span class="role">@replyRoleText</span>
+                    </strong>
+                    <small class="reply-time">@reply.CreatedAt.ToString("HH:mm, dd/MM/yyyy")</small>
+                </div>
+                <div class="reply-text">
+                    @Html.Raw(reply.Content)
+                    @if (!string.IsNullOrEmpty(reply.ImageUrl))
+                    {
+                        <div class="reply-image">
+                            <img src="@reply.ImageUrl" alt="Ảnh phản hồi" />
+                        </div>
+                    }
+                </div>
+                <div class="reply-actions">
+                    <button class="custom-reply-btn" data-comment-id="@reply.CommentId">
+                        <i class="fas fa-reply"></i> Trả lời
+                    </button>
+                </div>
+                <!-- Form trả lời cho reply (lồng nhau) -->
+                <div class="reply-form mt-2" id="topic-reply-form-@reply.CommentId" style="display: none;">
+                    <form class="topic-nested-reply-form" onsubmit="TopicManager.submitReply(event, @reply.CommentId)" enctype="multipart/form-data" style="position: relative;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ParentCommentId" value="@reply.CommentId" />
+                        <input type="hidden" name="TopicId" value="@reply.TopicId" />
+                        <div class="mb-2 position-relative">
+                            <textarea name="Content" class="form-control comment-input" placeholder="Nhập phản hồi..." rows="2" required style="padding-right: 40px;"></textarea>
+                            <label for="replyImage-@reply.CommentId" class="comment-image-label">
+                                <i class="fas fa-image"></i>
+                            </label>
+                            <input type="file" id="replyImage-@reply.CommentId" name="ImageUpload" class="form-control d-none" accept="image/*" />
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-light me-2" onclick="TopicManager.toggleReplyForm('@reply.CommentId')">Hủy</button>
+                            <button type="submit" class="btn btn-purple comment-submit-btn">Gửi phản hồi</button>
+                        </div>
+                    </form>
+                </div>
+                <!-- Đệ quy hiển thị replies con nếu có -->
+                @if (reply.Replies != null && reply.Replies.Any())
+                {
+                    @Html.Partial("_CommentReplies", new { replies = reply.Replies.OrderBy(r => r.CreatedAt).ToList(), level = level < 2 ? level + 1 : 2 })
+                }
+            </div>
+        </div>
+    </div>
+} 

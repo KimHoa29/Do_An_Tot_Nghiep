@@ -63,3 +63,56 @@ body {
 .mentioned-users .badge i {
     margin-right: 3px;
 }
+
+/* Custom orange outline button */
+.btn-outline-orange {
+    color: #ff9800;
+    border: 2px solid #ff9800;
+    background-color: transparent;
+    transition: background 0.2s, color 0.2s;
+}
+.btn-outline-orange:hover,
+.btn-outline-orange:focus,
+.btn-outline-orange:active {
+    background-color: #ff9800;
+    color: #fff;
+    border-color: #ff9800;
+}
+
+.icon-remove {
+    color: #ff3b3b !important;
+    transition: color 0.2s;
+}
+.btn-outline-orange:hover .icon-remove,
+.btn-outline-orange:focus .icon-remove,
+.btn-outline-orange:active .icon-remove {
+    color: #fff !important;
+}
+
+/* Tiêu đề card màu đen */
+.card-body h5.text-primary,
+.card-body h5.text-primary i {
+    color: #222 !important;
+}
+
+/* Badge vai trò chỉ viền đen, nền trong suốt, chữ đen */
+.badge.bg-success {
+    background: transparent !important;
+    color: #222 !important;
+    border: 1.5px solid #bbb !important;
+    border-radius: 999px !important;
+    font-size: 0.95em;
+    font-weight: 500;
+    padding: 3px 18px 3px 18px;
+    letter-spacing: 0.5px;
+    box-shadow: none !important;
+    font-family: 'Inter', Arial, sans-serif;
+    transition: background 0.18s, color 0.18s, border 0.18s;
+}
+.badge.bg-success:hover,
+.badge.bg-success:focus,
+.badge.bg-success:active {
+    background: #222 !important;
+    color: #fff !important;
+    border-color: #222 !important;
+}

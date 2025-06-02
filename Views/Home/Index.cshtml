@@ -46,18 +46,20 @@
                             </a>
                         }
                     </div>
-                    <div class="documents-list">
-                        @if (documents != null && documents.Any())
-                        {
-                            foreach (var document in documents)
+                    <div class="container">
+                        <div class="document-container">
+                            @if (documents != null && documents.Any())
                             {
-                                @await Html.PartialAsync("_Document", document)
+                                foreach (var document in documents)
+                                {
+                                    @await Html.PartialAsync("_Document", document)
+                                }
                             }
-                        }
-                        else
-                        {
-                            <p class="no-content">Chưa có tài liệu nào.</p>
-                        }
+                            else
+                            {
+                                <p class="no-content">Chưa có tài liệu nào.</p>
+                            }
+                        </div>
                     </div>
                 </div>
             </div>
@@ -69,7 +71,7 @@
                             <i class="fas fa-plus"></i> Tạo chủ đề
                         </a>
                     </div>
-                    <div class="topics-list">
+                    <div class="topic-container">
                         @if (topics != null && topics.Any())
                         {
                             foreach (var topic in topics)
@@ -92,7 +94,7 @@
                             <i class="fas fa-question-circle"></i> Gửi câu hỏi
                         </a>
                     </div>
-                    <div class="topics-list">
+                    <div class="post-container">
                         @if (posts != null && posts.Any())
                         {
                             foreach (var post in posts)
@@ -304,6 +306,37 @@
         
         // Save selected tab to localStorage
         localStorage.setItem("selectedTab", tabId);
+
+        // Reset any open menus when switching tabs
+        document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+
+        // Reinitialize event listeners for the active tab
+        initializeTabEventListeners(tabId);
+    }
+
+    function initializeTabEventListeners(tabId) {
+        // Initialize event listeners based on the active tab
+        if (tabId === 'ChuDe') {
+            // Reinitialize topic comment and reply functionality
+            document.querySelectorAll('.topic-actions').forEach(actions => {
+                const menu = actions.querySelector('.topic-menu');
+                if (menu) {
+                    menu.addEventListener('click', function(event) {
+                        event.stopPropagation();
+                    });
+                }
+            });
+
+            // Reinitialize reply forms
+            document.querySelectorAll('.custom-reply-btn').forEach(btn => {
+                btn.onclick = function() {
+                    const commentId = this.getAttribute('onclick').match(/'([^']+)'/)[1];
+                    topicToggleReplyForm(commentId);
+                };
+            });
+        }
     }
 
     // Add click event listeners to tabs
@@ -320,5 +353,157 @@
         if (tabElement) {
             showTab(tabElement);
         }
+    });
+
+    // Close menus when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.post-actions') &&
+            !event.target.closest('.document-actions') &&
+            !event.target.closest('.topic-actions')) {
+            document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(menu => {
+                menu.classList.remove('show');
+            });
+        }
+    });
+
+    // Prevent menu from closing when clicking inside
+    document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(menu => {
+        menu.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+    });
+</script>
+
+<script src="~/js/topic.js"></script>
+
+<script>
+    // Infinite scroll chỉ khai báo 1 lần ở đây!
+    let isLoading = false;
+    let skip = 4;
+
+    function loadMoreDocuments() {
+        if (isLoading) return;
+        isLoading = true;
+
+        fetch(`/Home/LoadMoreDocuments?skip=${skip}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const container = document.querySelector('.document-container');
+                    if (container) {
+                        container.insertAdjacentHTML('beforeend', data.html);
+                        skip += 4;
+                    }
+                } else if (data.message === "No more documents") {
+                    window.removeEventListener('scroll', handleScroll);
+                }
+                isLoading = false;
+            })
+            .catch(error => {
+                console.error('Error loading more documents:', error);
+                isLoading = false;
+            });
+    }
+
+    function handleScroll() {
+        // Chỉ thực hiện khi tab Tài liệu đang active
+        const tab = document.querySelector('.tab.active');
+        if (!tab || tab.getAttribute('data-tab') !== 'TaiLieuChung') return;
+
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+            loadMoreDocuments();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('scroll', handleScroll);
+    });
+</script>
+
+<script>
+    // Infinite scroll cho Góc cố vấn (Post)
+    let isLoadingPost = false;
+    let skipPost = 4;
+
+    function loadMorePosts() {
+        if (isLoadingPost) return;
+        isLoadingPost = true;
+
+        fetch(`/Home/LoadMorePosts?skip=${skipPost}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const container = document.querySelector('.post-container');
+                    if (container) {
+                        container.insertAdjacentHTML('beforeend', data.html);
+                        skipPost += 4;
+                    }
+                } else if (data.message === "No more posts") {
+                    window.removeEventListener('scroll', handleScrollPost);
+                }
+                isLoadingPost = false;
+            })
+            .catch(error => {
+                console.error('Error loading more posts:', error);
+                isLoadingPost = false;
+            });
+    }
+
+    function handleScrollPost() {
+        // Chỉ thực hiện khi tab Góc cố vấn đang active
+        const tab = document.querySelector('.tab.active');
+        if (!tab || tab.getAttribute('data-tab') !== 'GocCoVan') return;
+
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+            loadMorePosts();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('scroll', handleScrollPost);
+    });
+</script>
+
+<script>
+    // Infinite scroll cho Chủ đề (Topic)
+    let isLoadingTopic = false;
+    let skipTopic = 4;
+
+    function loadMoreTopics() {
+        if (isLoadingTopic) return;
+        isLoadingTopic = true;
+
+        fetch(`/Home/LoadMoreTopics?skip=${skipTopic}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const container = document.querySelector('.topic-container');
+                    if (container) {
+                        container.insertAdjacentHTML('beforeend', data.html);
+                        skipTopic += 4;
+                    }
+                } else if (data.message === "No more topics") {
+                    window.removeEventListener('scroll', handleScrollTopic);
+                }
+                isLoadingTopic = false;
+            })
+            .catch(error => {
+                console.error('Error loading more topics:', error);
+                isLoadingTopic = false;
+            });
+    }
+
+    function handleScrollTopic() {
+        // Chỉ thực hiện khi tab Chủ đề đang active
+        const tab = document.querySelector('.tab.active');
+        if (!tab || tab.getAttribute('data-tab') !== 'ChuDe') return;
+
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 1000) {
+            loadMoreTopics();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('scroll', handleScrollTopic);
     });
 </script>

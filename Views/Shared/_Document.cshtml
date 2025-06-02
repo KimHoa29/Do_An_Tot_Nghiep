@@ -126,17 +126,18 @@
         <!-- Khối comment -->
         <div class="comment-block mt-3" id="comment-block-@Model.DocumentId" style="display: none;">
             <!-- Form bình luận chính -->
-            <div class="comment-form">
+            <div class="comment-form custom-comment-form">
                 <form id="commentForm-@Model.DocumentId" class="comment-form" onsubmit="submitDocumentComment(event, @Model.DocumentId)">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="DocumentId" value="@Model.DocumentId" />
-                    <div class="mb-2">
-                        <textarea name="Content" class="form-control" placeholder="Viết bình luận..." rows="3" required></textarea>
+                    <div class="mb-2 d-flex align-items-center">
+                        <textarea name="Content" class="form-control custom-comment-textarea" placeholder="Viết bình luận..." rows="2" required></textarea>
+                        <label for="imageUpload-@Model.DocumentId" class="image-upload-label ms-2" title="Tải ảnh lên">
+                            <i class="fas fa-image"></i>
+                        </label>
+                        <input type="file" id="imageUpload-@Model.DocumentId" name="ImageUpload" class="form-control d-none" accept="image/*" />
                     </div>
-                    <div class="mb-2">
-                        <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
-                    </div>
-                    <button type="submit" class="btn btn-purple">Gửi bình luận</button>
+                    <button type="submit" class="btn btn-purple custom-send-btn">Gửi bình luận</button>
                 </form>
             </div>
 
@@ -179,26 +180,27 @@
                                 </div>
 
                                 <div class="comment-actions">
-                                    <button class="custom-reply-btn" onclick="toggleReplyForm('@comment.CommentDocumentId')">
+                                    <button class="custom-reply-btn" onclick="topicToggleReplyForm('@comment.CommentDocumentId')">
                                         <i class="fas fa-reply"></i> Trả lời
                                     </button>
                                 </div>
 
                                 <!-- Form bình luận trả lời -->
-                                <div class="reply-form mt-2" id="reply-form-@comment.CommentDocumentId" style="display: none;">
-                                    <form class="nested-reply-form" onsubmit="submitReply(event, @comment.CommentDocumentId)" enctype="multipart/form-data">
+                                <div class="reply-form mt-2 custom-reply-form" id="reply-form-@comment.CommentDocumentId" style="display: none;">
+                                    <form class="nested-reply-form d-flex flex-column" onsubmit="submitReply(event, @comment.CommentDocumentId)" enctype="multipart/form-data">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="ParentCommentId" value="@comment.CommentDocumentId" />
                                         <input type="hidden" name="DocumentId" value="@Model.DocumentId" />
-                                        <div class="mb-2">
-                                            <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                                        <div class="mb-2 d-flex align-items-center">
+                                            <textarea name="Content" class="form-control custom-comment-textarea" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                                            <label for="replyImageUpload-@comment.CommentDocumentId" class="image-upload-label ms-2" title="Tải ảnh lên">
+                                                <i class="fas fa-image"></i>
+                                            </label>
+                                            <input type="file" id="replyImageUpload-@comment.CommentDocumentId" name="ImageUpload" class="form-control d-none" accept="image/*" />
                                         </div>
-                                        <div class="mb-2">
-                                            <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
-                                        </div>
-                                        <div class="d-flex justify-content-end">
-                                            <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@comment.CommentDocumentId')">Hủy</button>
-                                            <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <button type="button" class="btn btn-light me-2" onclick="topicToggleReplyForm('@comment.CommentDocumentId')">Hủy</button>
+                                            <button type="submit" class="btn btn-purple custom-send-btn">Gửi phản hồi</button>
                                         </div>
                                     </form>
                                 </div>
@@ -241,26 +243,27 @@
                                                             }
                                                         </div>
                                                         <div class="reply-actions">
-                                                            <button class="custom-reply-btn" onclick="toggleReplyForm('@reply.CommentDocumentId')">
+                                                            <button class="custom-reply-btn" onclick="topicToggleReplyForm('@reply.CommentDocumentId')">
                                                                 <i class="fas fa-reply"></i> Trả lời
                                                             </button>
                                                         </div>
 
                                                         <!-- Form trả lời cho reply -->
-                                                        <div class="reply-form mt-2" id="reply-form-@reply.CommentDocumentId" style="display: none;">
-                                                            <form class="nested-reply-form" onsubmit="submitReply(event, @reply.CommentDocumentId)" enctype="multipart/form-data">
+                                                        <div class="reply-form mt-2 custom-reply-form" id="reply-form-@reply.CommentDocumentId" style="display: none;">
+                                                            <form class="nested-reply-form d-flex flex-column" onsubmit="submitReply(event, @reply.CommentDocumentId)" enctype="multipart/form-data">
                                                                 @Html.AntiForgeryToken()
                                                                 <input type="hidden" name="ParentCommentId" value="@reply.CommentDocumentId" />
                                                                 <input type="hidden" name="DocumentId" value="@Model.DocumentId" />
-                                                                <div class="mb-2">
-                                                                    <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                                                                <div class="mb-2 d-flex align-items-center">
+                                                                    <textarea name="Content" class="form-control custom-comment-textarea" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                                                                    <label for="replyImageUpload-@reply.CommentDocumentId" class="image-upload-label ms-2" title="Tải ảnh lên">
+                                                                        <i class="fas fa-image"></i>
+                                                                    </label>
+                                                                    <input type="file" id="replyImageUpload-@reply.CommentDocumentId" name="ImageUpload" class="form-control d-none" accept="image/*" />
                                                                 </div>
-                                                                <div class="mb-2">
-                                                                    <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
-                                                                </div>
-                                                                <div class="d-flex justify-content-end">
-                                                                    <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@reply.CommentDocumentId')">Hủy</button>
-                                                                    <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                                                                <div class="d-flex justify-content-end gap-2">
+                                                                    <button type="button" class="btn btn-light me-2" onclick="topicToggleReplyForm('@reply.CommentDocumentId')">Hủy</button>
+                                                                    <button type="submit" class="btn btn-purple custom-send-btn">Gửi phản hồi</button>
                                                                 </div>
                                                             </form>
                                                         </div>
@@ -293,7 +296,7 @@
         }
     }
 
-    function toggleReplyForm(commentId) {
+    function topicToggleReplyForm(commentId) {
         var form = document.getElementById('reply-form-' + commentId);
         if (form) {
             form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
@@ -379,24 +382,25 @@
                         ${comment.imageUrl ? `<div class='comment-image'><img src='${comment.imageUrl}' alt='Ảnh bình luận' /></div>` : ''}
                     </div>
                     <div class="comment-actions">
-                        <button class="custom-reply-btn" onclick="toggleReplyForm('${comment.id}')">
+                        <button class="custom-reply-btn" onclick="topicToggleReplyForm('${comment.id}')">
                             <i class="fas fa-reply"></i> Trả lời
                         </button>
                     </div>
-                    <div class="reply-form mt-2" id="reply-form-${comment.id}" style="display: none;">
-                        <form class="nested-reply-form" onsubmit="submitReply(event, ${comment.id})" enctype="multipart/form-data">
+                    <div class="reply-form mt-2 custom-reply-form" id="reply-form-${comment.id}" style="display: none;">
+                        <form class="nested-reply-form d-flex flex-column" onsubmit="submitReply(event, ${comment.id})" enctype="multipart/form-data">
                             <input type="hidden" name="ParentCommentId" value="${comment.id}" />
                             <input type="hidden" name="DocumentId" value="${documentId}" />
                             <input type="hidden" name="__RequestVerificationToken" value="${document.querySelector('input[name=__RequestVerificationToken]')?.value || ''}" />
-                            <div class="mb-2">
-                                <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                            <div class="mb-2 d-flex align-items-center">
+                                <textarea name="Content" class="form-control custom-comment-textarea" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                                <label for="replyImageUpload-${comment.id}" class="image-upload-label ms-2" title="Tải ảnh lên">
+                                    <i class="fas fa-image"></i>
+                                </label>
+                                <input type="file" id="replyImageUpload-${comment.id}" name="ImageUpload" class="form-control d-none" accept="image/*" />
                             </div>
-                            <div class="mb-2">
-                                <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
-                            </div>
-                            <div class="d-flex justify-content-end">
-                                <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('${comment.id}')">Hủy</button>
-                                <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                            <div class="d-flex justify-content-end gap-2">
+                                <button type="button" class="btn btn-light me-2" onclick="topicToggleReplyForm('${comment.id}')">Hủy</button>
+                                <button type="submit" class="btn btn-purple custom-send-btn">Gửi phản hồi</button>
                             </div>
                         </form>
                     </div>
@@ -427,24 +431,25 @@
                             ${reply.imageUrl ? `<div class='reply-image'><img src='${reply.imageUrl}' alt='Ảnh phản hồi' /></div>` : ''}
                         </div>
                         <div class="reply-actions">
-                            <button class="custom-reply-btn" onclick="toggleReplyForm('${reply.id}')">
+                            <button class="custom-reply-btn" onclick="topicToggleReplyForm('${reply.id}')">
                                 <i class="fas fa-reply"></i> Trả lời
                             </button>
                         </div>
-                        <div class="reply-form mt-2" id="reply-form-${reply.id}" style="display: none;">
-                            <form class="nested-reply-form" onsubmit="submitReply(event, ${reply.id})" enctype="multipart/form-data">
+                        <div class="reply-form mt-2 custom-reply-form" id="reply-form-${reply.id}" style="display: none;">
+                            <form class="nested-reply-form d-flex flex-column" onsubmit="submitReply(event, ${reply.id})" enctype="multipart/form-data">
                                 <input type="hidden" name="ParentCommentId" value="${reply.id}" />
                                 <input type="hidden" name="DocumentId" value="${documentId}" />
                                 <input type="hidden" name="__RequestVerificationToken" value="${globalToken}" />
-                                <div class="mb-2">
-                                    <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                                <div class="mb-2 d-flex align-items-center">
+                                    <textarea name="Content" class="form-control custom-comment-textarea" placeholder="Nhập phản hồi..." rows="2" required></textarea>
+                                    <label for="replyImageUpload-${reply.id}" class="image-upload-label ms-2" title="Tải ảnh lên">
+                                        <i class="fas fa-image"></i>
+                                    </label>
+                                    <input type="file" id="replyImageUpload-${reply.id}" name="ImageUpload" class="form-control d-none" accept="image/*" />
                                 </div>
-                                <div class="mb-2">
-                                    <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
-                                </div>
-                                <div class="d-flex justify-content-end">
-                                    <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('${reply.id}')">Hủy</button>
-                                    <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-light me-2" onclick="topicToggleReplyForm('${reply.id}')">Hủy</button>
+                                    <button type="submit" class="btn btn-purple custom-send-btn">Gửi phản hồi</button>
                                 </div>
                             </form>
                         </div>
@@ -525,7 +530,7 @@
                     repliesContainer.insertAdjacentHTML('beforeend', createDocumentReplyElement(result.reply, documentId, level));
                 }
                 form.reset();
-                toggleReplyForm(parentCommentId);
+                topicToggleReplyForm(parentCommentId);
             } else {
                 alert(result.message || 'Có lỗi xảy ra khi thêm phản hồi');
             }
@@ -538,7 +543,7 @@
     function toggleSave(id, type) {
         const saveBtn = document.querySelector(`.save-btn[data-${type}-id="${id}"]`);
         const saveCountSpan = saveBtn.querySelector('.count-number');
-        
+
         fetch(`/Saves/ToggleSave/${type}/${id}`, {
             method: 'POST',
             headers: {
@@ -892,18 +897,90 @@
         color: #65676b;
     }
 
-    .save-btn.saved {
-        color: #1877f2;
-    }
+        .save-btn.saved {
+            color: #1877f2;
+        }
 
-    .save-btn.saved i {
-        animation: saveAnimation 0.3s ease;
-    }
+            .save-btn.saved i {
+                animation: saveAnimation 0.3s ease;
+            }
 
     @@keyframes saveAnimation {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.2); }
-        100% { transform: scale(1); }
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.2);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .timetable-image img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+    .comment-image img,
+    .reply-image img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .custom-comment-form {
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 16px 18px 12px 18px;
+        background: #fafbfc;
+        margin-bottom: 18px;
+    }
+    .custom-comment-textarea {
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        resize: none;
+        width: 100%;
+        font-size: 1rem;
+        transition: border 0.2s;
+    }
+    .custom-comment-textarea:focus {
+        border: 1.5px solid #a259c3;
+        outline: none;
+    }
+    .image-upload-label {
+        cursor: pointer;
+        font-size: 1.7rem;
+        color: #a259c3;
+        transition: color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 38px;
+        width: 38px;
+        border-radius: 8px;
+    }
+    .image-upload-label:hover {
+        color: #fff;
+        background: #a259c3;
+    }
+    .custom-send-btn {
+        background: #a259c3 !important;
+        color: #fff !important;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 7px 22px;
+        margin-top: 8px;
+        border: none;
+        transition: background 0.2s;
+    }
+    .custom-send-btn:hover {
+        background: #800080 !important;
+        color: #fff !important;
     }
 </style>
 

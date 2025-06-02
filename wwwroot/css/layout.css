@@ -21,18 +21,19 @@ body {
     display: flex;
     flex-direction: column; /* Cả 2 chữ sẽ xếp theo chiều dọc */
     align-items: center; /* Căn giữa cả hai chữ theo chiều ngang */
+    color: #fff;
 }
 
 .faculty {
     font-size: 12px;
     font-weight: bold;
-    color: #023468;
+    color: #fff;
 }
 
 .university {
     font-size: 14px;
     font-weight: bold;
-    color: #023468; /* Màu cam */
+    color: #fff;
 }
 
 /* Menu ngang cố định ở trên cùng */
@@ -120,23 +121,43 @@ body {
     position: absolute;
     top: 100%;
     right: 0;
-    background: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    border-radius: 5px;
-    min-width: 150px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    min-width: 170px;
     z-index: 1000;
+    padding: 8px 0;
 }
 
-    .user-dropdown-menu a {
-        display: block;
-        padding: 10px;
-        color: black;
-        text-decoration: none;
-    }
+.user-dropdown-menu a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    color: #222;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 500;
+    background: none;
+    border: none;
+    transition: background 0.2s, color 0.2s;
+}
 
-        .user-dropdown-menu a:hover {
-            background: #f0f0f0;
-        }
+.user-dropdown-menu a i {
+    color: #222 !important;
+    font-size: 18px;
+    min-width: 20px;
+    text-align: center;
+}
+
+.user-dropdown-menu a:hover {
+    background: #f5f5f7;
+    color: #F07C18;
+}
+
+.user-dropdown-menu a:hover i {
+    color: #F07C18 !important;
+}
 
 /* Notification styles */
 .notification-icon {

@@ -6,9 +6,54 @@
 
 <head>
     <link rel="stylesheet" href="~/css/form-style.css" />
+    <style>
+        /* Style custom cho input file */
+        .custom-file-input::-webkit-file-upload-button {
+            visibility: hidden;
+        }
+        .custom-file-input::before {
+            content: 'Chọn ảnh';
+            display: inline-block;
+            background: #fff;
+            border: 1px solid #FF9800;
+            color: #FF9800;
+            border-radius: 6px;
+            padding: 6px 18px;
+            outline: none;
+            white-space: nowrap;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: background 0.2s, color 0.2s;
+        }
+        .custom-file-input:hover::before, .custom-file-input:focus::before {
+            background: #FF9800;
+            color: #fff;
+        }
+        .custom-file-input:active::before {
+            background: #FF9800;
+            color: #fff;
+        }
+        /* Ẩn nút mặc định trên Firefox */
+        .custom-file-input::-ms-browse {
+            visibility: hidden;
+        }
+        .btn-orange-custom {
+            color: #FF9800;
+            border-color: #FF9800;
+            background: #fff;
+            font-weight: 500;
+            transition: background 0.2s, color 0.2s;
+        }
+        .btn-orange-custom:hover, .btn-orange-custom:focus {
+            background: #FF9800 !important;
+            color: #fff !important;
+            border-color: #FF9800 !important;
+        }
+    </style>
 </head>
 
-<h2 class="text-center text-primary mt-3 fw-bold">Chỉnh sửa sinh viên</h2>
+<h2 class="text-center mt-3 fw-bold" style="color: #222;">Chỉnh sửa sinh viên</h2>
 <hr />
 
 <div class="row justify-content-center">
@@ -29,7 +74,7 @@
                      style="width: 150px; height: 150px; object-fit: cover;" />
                 <div class="mb-3">
                     <label for="avatarFile" class="form-label">Ảnh đại diện</label>
-                    <input type="file" class="form-control" id="avatarFile" name="avatarFile" accept="image/*" onchange="previewImage(this);" />
+                    <input type="file" class="form-control custom-file-input" id="avatarFile" name="avatarFile" accept="image/*" onchange="previewImage(this);" />
                 </div>
             </div>
 
@@ -77,8 +122,8 @@
             </div>
 
             <div class="text-center">
-                <button type="submit" class="btn btn-primary px-4 shadow">✅ Lưu</button>
-                <a asp-action="Details" asp-route-id="@Model.UserId" class="btn btn-secondary px-4 ms-2 shadow">🔙 Quay lại</a>
+                <button type="submit" class="btn btn-outline-warning px-4 shadow btn-orange-custom">Lưu</button>
+                <a href="javascript:history.back()" class="btn btn-outline-warning px-4 ms-2 shadow btn-orange-custom">Quay lại</a>
             </div>
         </form>
     </div>

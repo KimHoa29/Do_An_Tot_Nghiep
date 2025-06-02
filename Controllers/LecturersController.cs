@@ -21,8 +21,13 @@ namespace Do_An_Tot_Nghiep.Controllers
         }
 
         // GET: Lecturers
-        public async Task<IActionResult> Index(string searchString)
+        public async Task<IActionResult> Index(string searchString, int? pageNumber)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student") || CurrentUserRole.Equals("Lecturer"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var lecturersQuery = _context.Lecturers
                 .Include(l => l.User)
                 .GroupJoin(
@@ -51,13 +56,18 @@ namespace Do_An_Tot_Nghiep.Controllers
                                                            || l.Position.Contains(searchString));
             }
 
-            var lecturers = await lecturersQuery.ToListAsync();
-            return View(lecturers);
+            int pageSize = 10; // Số item trên mỗi trang
+            return View(await PaginatedList<Lecturer>.CreateAsync(lecturersQuery.AsNoTracking(), pageNumber ?? 1, pageSize));
         }
 
         // GET: Lecturers/Details/5
-        public async Task<IActionResult> Details(int? id, string searchString)
+        public async Task<IActionResult> Details(int? id, string searchString, int page = 1)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null) return NotFound();
 
             // Thử tìm theo LecturerId trước
@@ -68,7 +78,7 @@ namespace Do_An_Tot_Nghiep.Controllers
             // Nếu không tìm thấy theo LecturerId, thử tìm theo UserId
             if (lecturer == null)
             {
-                 lecturer = await _context.Lecturers
+                lecturer = await _context.Lecturers
                     .Include(u => u.User)
                     .FirstOrDefaultAsync(m => m.UserId == id); // Tìm theo UserId
             }
@@ -85,15 +95,27 @@ namespace Do_An_Tot_Nghiep.Controllers
             if (!string.IsNullOrEmpty(searchString))
             {
                 studentsQuery = studentsQuery.Where(s => s.FullName.Contains(searchString)
-                                                           || s.Email.Contains(searchString)
-                                                           || s.StudentId.ToString().Contains(searchString) // Tìm kiếm cả theo mã SV
-                                                           || s.Class.Contains(searchString)); // Tìm kiếm cả theo lớp
+                                                       || s.Email.Contains(searchString)
+                                                       || s.StudentId.ToString().Contains(searchString)
+                                                       || s.Class.Contains(searchString));
             }
 
-            var students = await studentsQuery.ToListAsync();
+            // PHÂN TRANG
+            int pageSize = 10;
+            int totalItems = await studentsQuery.CountAsync();
+            int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 
-            ViewBag.Students = students;
-            ViewBag.CurrentSearchString = searchString; // Lưu lại giá trị tìm kiếm
+            var studentsPaged = await studentsQuery
+                .OrderBy(s => s.FullName)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.Students = studentsPaged;
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalItems = totalItems;
+            ViewBag.CurrentSearchString = searchString;
 
             return View(lecturer);
         }
@@ -101,6 +123,10 @@ namespace Do_An_Tot_Nghiep.Controllers
         // GET: Lecturers/Create
         public IActionResult Create()
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student") || CurrentUserRole.Equals("Lecturer"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
             return View();
         }
 
@@ -108,6 +134,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("UserId,FullName,Position,Department,Specialization,Phone,Email,CreatedAt")] Lecturer lecturer, IFormFile? avatarFile)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student") || CurrentUserRole.Equals("Lecturer"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (ModelState.IsValid)
             {
                 try
@@ -155,6 +186,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         // GET: Lecturers/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null)
             {
                 return NotFound();
@@ -175,6 +211,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("LecturerId,UserId,FullName,Position,Department,Specialization,Phone,Email,CreatedAt")] Lecturer lecturer, IFormFile? avatarFile)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id != lecturer.LecturerId)
             {
                 return NotFound();
@@ -249,6 +290,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student") || CurrentUserRole.Equals("Lecturer"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             // Xóa các bản ghi liên kết trước
             var relatedStudents = await _context.LecturerStudents
                 .Where(ls => ls.LecturerId == id)
@@ -269,9 +315,15 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
         [HttpPost]
         public async Task<IActionResult> DeleteSelected(int[] selectedLecturers)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student") || CurrentUserRole.Equals("Lecturer"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (selectedLecturers == null || selectedLecturers.Length == 0)
             {
                 return RedirectToAction(nameof(Index));
@@ -300,23 +352,44 @@ namespace Do_An_Tot_Nghiep.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        public async Task<IActionResult> AddStudent(int lecturerId)
+        public async Task<IActionResult> AddStudent(int lecturerId, string? searchString, int? pageNumber)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (lecturerId == 0) return NotFound();
+
+            var studentsQuery = _context.Students
+                .Where(s => !_context.LecturerStudents.Any(ls => ls.LecturerId == lecturerId && ls.StudentId == s.StudentId));
+
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                studentsQuery = studentsQuery.Where(s =>
+                    s.StudentId.ToString().Contains(searchString) ||
+                    s.FullName.Contains(searchString) ||
+                    s.Class.Contains(searchString) ||
+                    s.Major.Contains(searchString) ||
+                    s.Email.Contains(searchString) ||
+                    s.Phone.Contains(searchString)
+                );
+            }
 
             var lecturer = await _context.Lecturers
                 .Where(l => l.LecturerId == lecturerId)
                 .Select(l => new AddStudentViewModel
                 {
                     LecturerId = l.LecturerId,
-                    FullName = l.FullName,
-                    Students = _context.Students
-                                    .Where(s => !_context.LecturerStudents.Any(ls => ls.LecturerId == lecturerId && ls.StudentId == s.StudentId))
-                                    .ToList()
+                    FullName = l.FullName
                 })
                 .FirstOrDefaultAsync();
 
             if (lecturer == null) return NotFound();
+
+            // Add pagination
+            int pageSize = 10;
+            lecturer.Students = await PaginatedList<Student>.CreateAsync(studentsQuery.AsNoTracking(), pageNumber ?? 1, pageSize);
 
             return View(lecturer);
         }
@@ -325,6 +398,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddStudent(AddStudentViewModel model)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (!model.SelectedStudentIds.Any())
             {
                 ModelState.AddModelError("", "Vui lòng chọn ít nhất một sinh viên.");
@@ -349,10 +427,16 @@ namespace Do_An_Tot_Nghiep.Controllers
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Details), new { id = model.LecturerId });
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveStudent(int lecturerId, int studentId)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var lecturerStudent = await _context.LecturerStudents
                 .FirstOrDefaultAsync(ls => ls.LecturerId == lecturerId && ls.StudentId == studentId);
 

@@ -4,14 +4,140 @@
     ViewData["Title"] = "Chi tiết nhóm";
 }
 
+<style>
+    body, .container, .card, .table, .btn, .badge {
+        font-family: 'Segoe UI', 'Roboto', 'Arial', sans-serif;
+    }
+    .card {
+        border-radius: 18px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+        border: none;
+    }
+    .card-header {
+        background: linear-gradient(90deg, #f8fafc 60%, #ffe5d0 100%);
+        border-radius: 18px 18px 0 0;
+        border-bottom: none;
+    }
+    .card-title {
+        font-weight: 600;
+        color: #222;
+        letter-spacing: 0.5px;
+    }
+    .table {
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .table th {
+        background: #f6f8fa;
+        font-weight: 500;
+        color: #555;
+    }
+    .table td {
+        font-weight: 400;
+        color: #333;
+        vertical-align: middle;
+    }
+    .badge {
+        font-size: 0.95em;
+        font-weight: 400;
+        border-radius: 12px;
+        padding: 0.35em 1.1em;
+        background: #f3f4f6;
+        color: #555;
+    }
+    .badge.bg-primary,
+    .badge.bg-success,
+    .badge.bg-danger,
+    .badge.bg-secondary {
+        background: #f3f4f6 !important;
+        color: #555 !important;
+    }
+    .btn-outline-orange {
+        border: 1.5px solid #ff9800;
+        color: #ff9800;
+        background: #fff;
+        transition: all 0.2s;
+    }
+    .btn-outline-orange:hover, .btn-outline-orange:focus {
+        background: #ff9800;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(255,152,0,0.12);
+    }
+    .btn-sm {
+        padding: 0.35em 0.7em;
+        font-size: 0.98em;
+        border-radius: 50px;
+    }
+    .icon-remove {
+        color: #ff9800;
+        transition: color 0.2s;
+    }
+    .btn-outline-orange:hover .icon-remove {
+        color: #fff;
+    }
+    .table-hover tbody tr:hover {
+        background: #f8fafc;
+    }
+    .table-responsive {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .alert-info {
+        background: #f6f8fa;
+        color: #555;
+        border-radius: 10px;
+        border: none;
+    }
+    .rounded-4, .rounded-top-4, .rounded-bottom-4, .rounded-3 {
+        border-radius: 18px !important;
+    }
+    .rounded-pill {
+        border-radius: 50px !important;
+    }
+    .fw-bold {
+        font-weight: 500 !important;
+    }
+    .table td .fw-bold {
+        font-weight: 400 !important;
+    }
+    .text-primary {
+        color: #ff9800 !important;
+    }
+    .table td, .table th {
+        border-top: none;
+    }
+    .table th, .table td {
+        padding: 0.7em 1em;
+    }
+    .table thead th {
+        border-bottom: 2px solid #f3f4f6;
+    }
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .table td .d-flex {
+        gap: 0.5em;
+    }
+    .mt-4.text-center a {
+        color: #ff9800;
+        text-decoration: underline;
+        font-size: 1.05em;
+        transition: color 0.2s;
+    }
+    .mt-4.text-center a:hover {
+        color: #222;
+    }
+</style>
+
 <div class="container mt-4">
     <div class="card shadow rounded-4 border-0">
         <div class="card-header py-3 rounded-top-4">
             <div class="d-flex justify-content-between align-items-center">
                 <h3 class="card-title mb-0">
-                    <i class="fas fa-users me-2"></i>Chi tiết nhóm: <span class="fw-bold">@Model.GroupName</span>
+                    <i class="fas fa-users me-2"></i>Chi tiết nhóm: <span>@Model.GroupName</span>
                 </h3>
-                <a href="@Url.Action("Edit", new { id = Model.GroupId })" class="btn btn-light btn-sm rounded-pill shadow-sm">
+                <a href="@Url.Action("Edit", new { id = Model.GroupId })" class="btn btn-outline-orange btn-sm rounded-pill shadow-sm">
                     <i class="fas fa-edit"></i> Chỉnh sửa
                 </a>
             </div>
@@ -30,7 +156,7 @@
                                         <td class="text-muted" style="width: 140px;">
                                             <i class="fas fa-signature me-2"></i>Tên nhóm:
                                         </td>
-                                        <td class="fw-bold">@Model.GroupName</td>
+                                        <td>@Model.GroupName</td>
                                     </tr>
                                     <tr>
                                         <td class="text-muted">
@@ -59,10 +185,18 @@
                                 <h5 class="text-primary mb-0">
                                     <i class="fas fa-user-friends me-2"></i>Danh sách thành viên
                                 </h5>
-                                <a href="@Url.Action("AddUsers", new { id = Model.GroupId })" class="btn btn-primary rounded-pill shadow-sm">
+                                <a href="@Url.Action("AddUsers", new { id = Model.GroupId })" class="btn btn-outline-orange rounded-pill shadow-sm">
                                     <i class="fas fa-user-plus me-2"></i>Thêm thành viên
                                 </a>
                             </div>
+
+                            <!-- Form tìm kiếm thành viên -->
+                            <form method="get" action="@Url.Action("Details", new { id = Model.GroupId })" class="mb-3">
+                                <div class="input-group" style="max-width: 350px;">
+                                    <input type="text" class="form-control" name="searchMember" placeholder="Tìm kiếm thành viên..." value="@ViewBag.SearchMember">
+                                    <button type="submit" class="btn btn-outline-orange"><i class="fas fa-search"></i></button>
+                                </div>
+                            </form>
 
                             @if (Model.GroupUsers != null && Model.GroupUsers.Any())
                             {
@@ -73,7 +207,17 @@
                                                 <th>Họ và tên</th>
                                                 <th>Vai trò</th>
                                                 <th>Ngày tham gia</th>
-                                                <th class="text-end">Thao tác</th>
+                                                @{
+                                                    var creatorUserId = ViewBag.CreatorUserId as int?;
+                                                    var currentUserId = ViewBag.CurrentUserId as string;
+                                                    int currentUserIdInt = -1;
+                                                    int.TryParse(currentUserId, out currentUserIdInt);
+                                                    var currentUserRole = ViewBag.CurrentUserRole as string;
+                                                }
+                                                @if (creatorUserId == currentUserIdInt || currentUserRole == "Lecturer")
+                                                {
+                                                    <th class="text-end">Thao tác</th>
+                                                }
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -82,7 +226,7 @@
                                                 <tr>
                                                     <td>
                                                         <div class="d-flex align-items-center">
-                                                            <span class="fw-bold">@member.User.Username</span>
+                                                            <span>@member.User.Username</span>
                                                         </div>
                                                     </td>
                                                     <td>
@@ -101,7 +245,7 @@
                                                                     break;
                                                                 case "Student":
                                                                     roleText = "Sinh viên";
-                                                                    roleClass = "badge bg-success";
+                                                                    roleClass = "badge bg-primary";
                                                                     break;
                                                                 default:
                                                                     roleText = "Người dùng";
@@ -109,22 +253,28 @@
                                                                     break;
                                                             }
                                                         }
-                                                        <span class="@roleClass rounded-pill px-3 py-1">@roleText</span>
+                                                        <span class="@roleClass">@roleText</span>
                                                     </td>
                                                     <td>
                                                         <i class="fas fa-calendar-alt text-muted me-2"></i>
                                                         @member.JoinedAt.ToString("dd/MM/yyyy HH:mm")
                                                     </td>
-                                                    <td class="text-end">
-                                                        <form asp-action="RemoveUserFromGroup" method="post" class="d-inline">
-                                                            <input type="hidden" name="groupId" value="@Model.GroupId" />
-                                                            <input type="hidden" name="userId" value="@member.UserId" />
-                                                            <button type="submit" class="btn btn-outline-danger btn-sm rounded-circle" 
-                                                                    title="Xóa khỏi nhóm" onclick="return confirm('Bạn có chắc chắn muốn xóa người dùng này khỏi nhóm?');">
-                                                                <i class="fas fa-user-minus"></i>
-                                                            </button>
-                                                        </form>
-                                                    </td>
+                                                    @if (creatorUserId == currentUserIdInt || currentUserRole == "Lecturer")
+                                                    {
+                                                        <td class="text-end">
+                                                            @if (member.UserId != currentUserIdInt)
+                                                            {
+                                                                <form asp-action="RemoveUserFromGroup" method="post" class="d-inline">
+                                                                    <input type="hidden" name="groupId" value="@Model.GroupId" />
+                                                                    <input type="hidden" name="userId" value="@member.UserId" />
+                                                                    <button type="submit" class="btn btn-outline-orange btn-sm rounded-circle" 
+                                                                            title="Xóa khỏi nhóm" onclick="return confirm('Bạn có chắc chắn muốn xóa người dùng này khỏi nhóm?');">
+                                                                        <i class="fas fa-user-minus icon-remove"></i>
+                                                                    </button>
+                                                                </form>
+                                                            }
+                                                        </td>
+                                                    }
                                                 </tr>
                                             }
                                         </tbody>
@@ -144,8 +294,8 @@
             </div>
 
             <div class="mt-4 text-center">
-                <a href="@Url.Action("Index")" class="btn btn-secondary rounded-pill px-4">
-                    <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách
+                <a href="#" onclick="history.back(); return false;">
+                    &lt; Quay lại trang trước
                 </a>
             </div>
         </div>

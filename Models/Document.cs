@@ -62,6 +62,6 @@ namespace Do_An_Tot_Nghiep.Models
 
     public virtual ICollection<LikeDocument>? LikeDocuments { get; set; }
 
-    public virtual ICollection<Save> Saves { get; set; }
+    public virtual ICollection<Save>? Saves { get; set; }
     }
 }

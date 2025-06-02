@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Do_An_Tot_Nghiep.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Do_An_Tot_Nghiep.Models;
 
 namespace Do_An_Tot_Nghiep.Controllers
 {
@@ -21,53 +17,55 @@ namespace Do_An_Tot_Nghiep.Controllers
         }
         public async Task<IActionResult> Index(string searchString)
         {
-
             if (!IsLogin)
             {
                 return RedirectToAction("Login", "Account");
             }
-            else
+
+            var query = _context.Documents
+                .Include(t => t.User)
+                .Include(t => t.DocumentGroups)
+                .Include(t => t.DocumentUsers)
+                .Include(t => t.CommentDocuments)
+                    .ThenInclude(c => c.User)
+                .AsQueryable();
+
+            // Tìm kiếm
+            if (!string.IsNullOrEmpty(searchString))
             {
-                var query = _context.Documents
-                    .Include(t => t.User)
-                    .Include(t => t.DocumentGroups)
-                    .Include(t => t.DocumentUsers)
-                    .Include(t => t.CommentDocuments)
-                        .ThenInclude(c => c.User)
-                    .AsQueryable();
-
-                // Tìm kiếm
-                if (!string.IsNullOrEmpty(searchString))
-                {
-                    query = query.Where(t => t.Title.Contains(searchString) || t.Content.Contains(searchString));
-                }
-
-                // Lấy danh sách các nhóm mà người dùng thuộc về
-                var userGroupIds = _context.GroupUsers
-                    .Where(gu => gu.UserId.ToString() == CurrentUserID)
-                    .Select(gu => gu.GroupId)
-                    .ToList();
-
-                // Lọc quyền truy cập
-                if (CurrentUserRole != "Admin")
-                {
-                    query = query.Where(t =>
-                        t.UserId.ToString() == CurrentUserID ||
-                        t.VisibilityType == "public" ||
-                        (t.VisibilityType == "private" && t.UserId.ToString() == CurrentUserID) ||
-                        (t.VisibilityType == "group" && t.DocumentGroups.Any(g => userGroupIds.Contains(g.GroupId))) ||
-                        (t.VisibilityType == "custom" && t.DocumentUsers.Any(u => u.UserId.ToString() == CurrentUserID))
-                    );
-                }
-
-                var result = await query.ToListAsync();
-                return View(result);
+                query = query.Where(t => t.Title.Contains(searchString) || t.Content.Contains(searchString));
             }
+
+            // Lấy danh sách các nhóm mà người dùng thuộc về
+            var userGroupIds = _context.GroupUsers
+                .Where(gu => gu.UserId.ToString() == CurrentUserID)
+                .Select(gu => gu.GroupId)
+                .ToList();
+
+            // Lọc quyền truy cập
+            if (CurrentUserRole != "Admin")
+            {
+                query = query.Where(t =>
+                    t.UserId.ToString() == CurrentUserID ||
+                    t.VisibilityType == "public" ||
+                    (t.VisibilityType == "private" && t.UserId.ToString() == CurrentUserID) ||
+                    (t.VisibilityType == "group" && t.DocumentGroups.Any(g => userGroupIds.Contains(g.GroupId))) ||
+                    (t.VisibilityType == "custom" && t.DocumentUsers.Any(u => u.UserId.ToString() == CurrentUserID))
+                );
+            }
+
+            var result = await query.ToListAsync();
+            return View(result);
         }
 
         // GET: Documents/Details/5
         public async Task<IActionResult> Details(int? id)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null)
             {
                 return NotFound();
@@ -75,6 +73,8 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             var document = await _context.Documents
                 .Include(t => t.User)
+                .Include(t => t.DocumentGroups)
+                .Include(t => t.DocumentUsers)
                 .FirstOrDefaultAsync(m => m.DocumentId == id);
 
             if (document == null)
@@ -82,14 +82,26 @@ namespace Do_An_Tot_Nghiep.Controllers
                 return NotFound();
             }
 
-            // Add admin check before returning the view
-            if (CurrentUserRole == "Admin")
+            // Kiểm tra quyền truy cập
+            if (CurrentUserRole != "Admin")
             {
-                return View(document);
-            }
+                var userGroupIds = _context.GroupUsers
+                    .Where(gu => gu.UserId.ToString() == CurrentUserID)
+                    .Select(gu => gu.GroupId)
+                    .ToList();
 
-            // The rest of the permission checks are not present in this method,
-            // so returning here for admin is sufficient.
+                var hasAccess = document.UserId.ToString() == CurrentUserID ||
+                              document.VisibilityType == "public" ||
+                              (document.VisibilityType == "private" && document.UserId.ToString() == CurrentUserID) ||
+                              (document.VisibilityType == "group" && document.DocumentGroups.Any(g => userGroupIds.Contains(g.GroupId))) ||
+                              (document.VisibilityType == "custom" && document.DocumentUsers.Any(u => u.UserId.ToString() == CurrentUserID));
+
+                if (!hasAccess)
+                {
+                    TempData["Error"] = "Bạn không có quyền truy cập tài liệu này.";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
 
             return View(document);
         }
@@ -97,33 +109,36 @@ namespace Do_An_Tot_Nghiep.Controllers
         // GET: Documents/Create
         public async Task<IActionResult> Create()
         {
-            if (!IsLogin)
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
             {
                 return RedirectToAction("Login", "Account");
             }
-            else
-            {
-                ViewBag.Users = new MultiSelectList(_context.Users.ToList(), "UserId", "Username");
-                ViewBag.Groups = new MultiSelectList(_context.Groups.ToList(), "GroupId", "GroupName");
-                ViewBag.VisibilityTypes = new SelectList(new[] {
-                    new { Value = "public", Text = "Công khai" },
-                    new { Value = "private", Text = "Riêng tư" },
-                    new { Value = "group", Text = "Theo nhóm" },
-                    new { Value = "custom", Text = "Tùy chọn người dùng" }
-                }, "Value", "Text");
-                ViewBag.Username = CurrentUserName;
-                ViewBag.Role = CurrentUserRole;
-                var currentUser = await _context.Users.FirstOrDefaultAsync(m => m.UserId.ToString().Equals(CurrentUserID));
-                ViewBag.Avatar = currentUser?.Avatar;
-                return View();
-            }
+
+            ViewBag.Users = new MultiSelectList(_context.Users.Where(u => u.Role != "Admin").ToList(), "UserId", "Username");
+            ViewBag.Groups = new MultiSelectList(_context.Groups.ToList(), "GroupId", "GroupName");
+            ViewBag.VisibilityTypes = new SelectList(new[] {
+                new { Value = "public", Text = "Công khai" },
+                new { Value = "private", Text = "Riêng tư" },
+                new { Value = "group", Text = "Theo nhóm" },
+                new { Value = "custom", Text = "Tùy chọn người dùng" }
+            }, "Value", "Text");
+            ViewBag.Username = CurrentUserName;
+            ViewBag.Role = CurrentUserRole;
+            var currentUser = await _context.Users.FirstOrDefaultAsync(m => m.UserId.ToString().Equals(CurrentUserID));
+            ViewBag.Avatar = currentUser?.Avatar;
+            return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Document document, IFormFile? imageFile, IFormFile? documentFile, int[] selectedGroups, int[] selectedUsers)
         {
-            ViewBag.Users = new MultiSelectList(_context.Users.ToList(), "UserId", "Username", selectedUsers);
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            ViewBag.Users = new MultiSelectList(_context.Users.Where(u => u.Role != "Admin").ToList(), "UserId", "Username", selectedUsers);
             ViewBag.Groups = new MultiSelectList(_context.Groups.ToList(), "GroupId", "GroupName", selectedGroups);
             ViewBag.VisibilityTypes = new SelectList(new[] {
                 new { Value = "public", Text = "Công khai" },
@@ -259,6 +274,31 @@ namespace Do_An_Tot_Nghiep.Controllers
                     }
                 }
 
+                // Tạo thông báo cho tất cả người dùng (trừ admin) khi tài liệu công khai
+                if (document.VisibilityType == "public")
+                {
+                    var allUsers = await _context.Users
+                        .Where(u => u.Role != "Admin" && u.UserId != user.UserId) // Lấy tất cả người dùng trừ admin và người tạo
+                        .ToListAsync();
+
+                    foreach (var targetUser in allUsers)
+                    {
+                        var notification = new Notification
+                        {
+                            UserId = targetUser.UserId,
+                            Title = "Tài liệu mới công khai",
+                            Content = $"Có tài liệu mới công khai: {document.Title}",
+                            Type = 4, // 4 for document
+                            DocumentId = document.DocumentId,
+                            Path = $"/Documents/Details/{document.DocumentId}",
+                            IsRead = false,
+                            CreatedAt = DateTime.Now
+                        };
+
+                        _context.Notifications.Add(notification);
+                    }
+                }
+
                 await _context.SaveChangesAsync();
                 return RedirectToAction("Index", "Home", new { tab = "TaiLieu" });
             }
@@ -269,6 +309,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         // GET: Documents/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null)
             {
                 return NotFound();
@@ -282,6 +327,13 @@ namespace Do_An_Tot_Nghiep.Controllers
             if (document == null)
             {
                 return NotFound();
+            }
+
+            // Kiểm tra quyền chỉnh sửa
+            if (CurrentUserRole != "Admin" && document.UserId.ToString() != CurrentUserID)
+            {
+                TempData["Error"] = "Bạn không có quyền chỉnh sửa tài liệu này.";
+                return RedirectToAction(nameof(Index));
             }
 
             ViewBag.Users = new MultiSelectList(_context.Users.ToList(), "UserId", "Username", document.DocumentUsers.Select(tu => tu.UserId));
@@ -305,6 +357,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Document model, IFormFile? imageFile, IFormFile? documentFile, int[] selectedUsers, int[] selectedGroups)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id != model.DocumentId)
                 return NotFound();
 
@@ -315,6 +372,13 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             if (document == null)
                 return NotFound();
+
+            // Kiểm tra quyền chỉnh sửa
+            if (CurrentUserRole != "Admin" && document.UserId.ToString() != CurrentUserID)
+            {
+                TempData["Error"] = "Bạn không có quyền chỉnh sửa tài liệu này.";
+                return RedirectToAction(nameof(Index));
+            }
 
             document.Title = model.Title;
             document.Content = model.Content;
@@ -336,13 +400,6 @@ namespace Do_An_Tot_Nghiep.Controllers
             // Xử lý tài liệu
             if (documentFile != null && documentFile.Length > 0)
             {
-                //var docFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "files");
-                //Directory.CreateDirectory(docFolder);
-                //var docFileName = Guid.NewGuid() + Path.GetExtension(documentFile.FileName);
-                //var docPath = Path.Combine(docFolder, docFileName);
-                //using (var stream = new FileStream(docPath, FileMode.Create))
-                //    await documentFile.CopyToAsync(stream);
-                //document.FileUrl = "/uploads/files/" + docFileName;
                 var docFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "files");
                 if (!Directory.Exists(docFolder))
                 {
@@ -398,6 +455,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         // GET: Documents/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null)
             {
                 return NotFound();
@@ -415,6 +477,13 @@ namespace Do_An_Tot_Nghiep.Controllers
                 return NotFound();
             }
 
+            // Kiểm tra quyền xóa
+            if (CurrentUserRole != "Admin" && document.UserId.ToString() != CurrentUserID)
+            {
+                TempData["Error"] = "Bạn không có quyền xóa tài liệu này.";
+                return RedirectToAction(nameof(Index));
+            }
+
             return View(document);
         }
 
@@ -423,6 +492,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var document = await _context.Documents
                 .Include(t => t.DocumentUsers)
                 .Include(t => t.DocumentGroups)
@@ -431,9 +505,20 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             if (document != null)
             {
+                // Kiểm tra quyền xóa
+                if (CurrentUserRole != "Admin" && document.UserId.ToString() != CurrentUserID)
+                {
+                    TempData["Error"] = "Bạn không có quyền xóa tài liệu này.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 // Xóa các like liên quan
                 var likes = _context.LikeDocuments.Where(l => l.DocumentId == document.DocumentId);
                 _context.LikeDocuments.RemoveRange(likes);
+
+                // Xóa các saves liên quan
+                var saves = _context.Saves.Where(s => s.DocumentId == document.DocumentId);
+                _context.Saves.RemoveRange(saves);
 
                 // Xóa các file vật lý nếu có
                 if (!string.IsNullOrEmpty(document.ImageUrl))
@@ -512,10 +597,33 @@ namespace Do_An_Tot_Nghiep.Controllers
         [HttpPost]
         public async Task<IActionResult> DeleteMultiple(int[] selectedDocuments)
         {
+            if (!IsLogin || CurrentUserRole.Equals("Student"))
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (selectedDocuments == null || selectedDocuments.Length == 0)
             {
                 TempData["ErrorMessage"] = "Bạn chưa chọn tài liệu nào để xóa.";
                 return RedirectToAction("Index");
+            }
+
+            // Kiểm tra quyền xóa cho từng tài liệu
+            if (CurrentUserRole != "Admin")
+            {
+                var documents = await _context.Documents
+                    .Where(d => selectedDocuments.Contains(d.DocumentId))
+                    .ToListAsync();
+
+                var unauthorizedDocuments = documents
+                    .Where(d => d.UserId.ToString() != CurrentUserID)
+                    .ToList();
+
+                if (unauthorizedDocuments.Any())
+                {
+                    TempData["ErrorMessage"] = "Bạn không có quyền xóa một số tài liệu đã chọn.";
+                    return RedirectToAction("Index");
+                }
             }
 
             foreach (var id in selectedDocuments)
@@ -532,6 +640,10 @@ namespace Do_An_Tot_Nghiep.Controllers
                     // Xóa các like liên quan
                     var likes = _context.LikeDocuments.Where(l => l.DocumentId == document.DocumentId);
                     _context.LikeDocuments.RemoveRange(likes);
+
+                    // Xóa các saves liên quan
+                    var saves = _context.Saves.Where(s => s.DocumentId == document.DocumentId);
+                    _context.Saves.RemoveRange(saves);
 
                     // Xóa các file vật lý nếu có
                     if (!string.IsNullOrEmpty(document.ImageUrl))
@@ -612,7 +724,7 @@ namespace Do_An_Tot_Nghiep.Controllers
         [HttpPost]
         public async Task<IActionResult> ToggleLike(int id)
         {
-            if (!IsLogin || string.IsNullOrEmpty(CurrentUserID))
+            if (!IsLogin)
             {
                 return Json(new { success = false, message = "Vui lòng đăng nhập để thích tài liệu" });
             }
@@ -621,7 +733,7 @@ namespace Do_An_Tot_Nghiep.Controllers
             {
                 return Json(new { success = false, message = "Có lỗi xảy ra, vui lòng thử lại" });
             }
-            
+
             var document = await _context.Documents
                 .Include(p => p.LikeDocuments)
                 .FirstOrDefaultAsync(p => p.DocumentId == id);
@@ -639,7 +751,7 @@ namespace Do_An_Tot_Nghiep.Controllers
                 // Unlike
                 _context.LikeDocuments.Remove(existingLike);
                 await _context.SaveChangesAsync();
-                
+
                 // Đếm lại số lượt like
                 var updatedLikeCount = await _context.LikeDocuments.CountAsync(l => l.DocumentId == id);
                 return Json(new { success = true, likeCount = updatedLikeCount, isLiked = false });
@@ -655,7 +767,7 @@ namespace Do_An_Tot_Nghiep.Controllers
                 };
                 _context.LikeDocuments.Add(newLike);
                 await _context.SaveChangesAsync();
-                
+
                 // Đếm lại số lượt like
                 var updatedLikeCount = await _context.LikeDocuments.CountAsync(l => l.DocumentId == id);
                 return Json(new { success = true, likeCount = updatedLikeCount, isLiked = true });
@@ -665,6 +777,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         [HttpGet]
         public async Task<IActionResult> PopupPartial(int id)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var document = await _context.Documents
                 .Include(t => t.User)
                 .Include(t => t.DocumentGroups)
@@ -676,16 +793,43 @@ namespace Do_An_Tot_Nghiep.Controllers
                     .ThenInclude(c => c.Replies)
                         .ThenInclude(r => r.User)
                 .FirstOrDefaultAsync(m => m.DocumentId == id);
+
             if (document == null)
             {
                 return NotFound();
             }
+
+            // Kiểm tra quyền truy cập
+            if (CurrentUserRole != "Admin")
+            {
+                var userGroupIds = _context.GroupUsers
+                    .Where(gu => gu.UserId.ToString() == CurrentUserID)
+                    .Select(gu => gu.GroupId)
+                    .ToList();
+
+                var hasAccess = document.UserId.ToString() == CurrentUserID ||
+                              document.VisibilityType == "public" ||
+                              (document.VisibilityType == "private" && document.UserId.ToString() == CurrentUserID) ||
+                              (document.VisibilityType == "group" && document.DocumentGroups.Any(g => userGroupIds.Contains(g.GroupId))) ||
+                              (document.VisibilityType == "custom" && document.DocumentUsers.Any(u => u.UserId.ToString() == CurrentUserID));
+
+                if (!hasAccess)
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền truy cập tài liệu này." });
+                }
+            }
+
             return PartialView("_DocumentPopupPartial", document);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetDocumentPopup(int id)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             var document = await _context.Documents
                 .Include(d => d.User)
                 .Include(d => d.DocumentGroups)
@@ -703,6 +847,26 @@ namespace Do_An_Tot_Nghiep.Controllers
             if (document == null)
             {
                 return NotFound();
+            }
+
+            // Kiểm tra quyền truy cập
+            if (CurrentUserRole != "Admin")
+            {
+                var userGroupIds = _context.GroupUsers
+                    .Where(gu => gu.UserId.ToString() == CurrentUserID)
+                    .Select(gu => gu.GroupId)
+                    .ToList();
+
+                var hasAccess = document.UserId.ToString() == CurrentUserID ||
+                              document.VisibilityType == "public" ||
+                              (document.VisibilityType == "private" && document.UserId.ToString() == CurrentUserID) ||
+                              (document.VisibilityType == "group" && document.DocumentGroups.Any(g => userGroupIds.Contains(g.GroupId))) ||
+                              (document.VisibilityType == "custom" && document.DocumentUsers.Any(u => u.UserId.ToString() == CurrentUserID));
+
+                if (!hasAccess)
+                {
+                    return Json(new { success = false, message = "Bạn không có quyền truy cập tài liệu này." });
+                }
             }
 
             return PartialView("_DocumentPopupPartial", document);

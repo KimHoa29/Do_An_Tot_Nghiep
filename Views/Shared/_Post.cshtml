@@ -98,7 +98,7 @@
                         </a>
                     </div>
                 }
-                </div>
+            </div>
         </div>
 
         <!-- Tiêu đề -->
@@ -172,16 +172,17 @@
         <div class="comment-block mt-3" id="comment-block-@Model.PostId" style="display: none;">
             <!-- Form bình luận chính -->
             <div class="comment-form">
-                <form id="commentForm-@Model.PostId" class="comment-form" onsubmit="submitPostComment(event, @Model.PostId)">
+                <form id="commentForm-@Model.PostId" class="custom-comment-form" onsubmit="submitPostComment(event, @Model.PostId)">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="PostId" value="@Model.PostId" />
-                    <div class="mb-2">
-                        <textarea name="Content" class="form-control" placeholder="Viết bình luận..." rows="3" required></textarea>
+                    <div class="input-wrapper">
+                        <input type="text" name="Content" class="custom-comment-input" placeholder="Viết bình luận..." autocomplete="off" required />
+                        <label class="image-upload-label">
+                            <input type="file" name="ImageUpload" accept="image/*" style="display:none;" />
+                            <i class="fas fa-image"></i>
+                        </label>
                     </div>
-                    <div class="mb-2">
-                        <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
-                    </div>
-                    <button type="submit" class="btn btn-purple">Gửi bình luận</button>
+                    <button type="submit" class="btn-submit-comment">Gửi bình luận</button>
                 </form>
             </div>
 
@@ -224,26 +225,27 @@
                                 </div>
 
                                 <div class="comment-actions">
-                                    <button class="custom-reply-btn" onclick="toggleReplyForm('@comment.CommentPostId')">
+                                    <button class="custom-reply-btn" onclick="topicToggleReplyForm('@comment.CommentPostId')">
                                         <i class="fas fa-reply"></i> Trả lời
                                     </button>
                                 </div>
 
                                 <!-- Form bình luận trả lời -->
                                 <div class="reply-form mt-2" id="reply-form-@comment.CommentPostId" style="display: none;">
-                                    <form class="nested-reply-form" onsubmit="submitPostReply(event, @comment.CommentPostId)" enctype="multipart/form-data">
+                                    <form class="custom-reply-form" onsubmit="submitPostReply(event, @comment.CommentPostId)" enctype="multipart/form-data">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="ParentCommentId" value="@comment.CommentPostId" />
                                         <input type="hidden" name="PostId" value="@Model.PostId" />
-                                        <div class="mb-2">
-                                            <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
-                                        </div>
-                                        <div class="mb-2">
-                                            <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                                        <div class="input-wrapper">
+                                            <input type="text" name="Content" class="custom-comment-input" placeholder="Nhập phản hồi..." autocomplete="off" required />
+                                            <label class="image-upload-label">
+                                                <input type="file" name="ImageUpload" accept="image/*" style="display:none;" />
+                                                <i class="fas fa-image"></i>
+                                            </label>
                                         </div>
                                         <div class="d-flex justify-content-end">
-                                            <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@comment.CommentPostId')">Hủy</button>
-                                            <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                                            <button type="button" class="btn btn-light me-2" onclick="topicToggleReplyForm('@comment.CommentPostId')">Hủy</button>
+                                            <button type="submit" class="btn-submit-comment">Gửi phản hồi</button>
                                         </div>
                                     </form>
                                 </div>
@@ -286,26 +288,27 @@
                                                             }
                                                         </div>
                                                         <div class="reply-actions">
-                                                            <button class="custom-reply-btn" onclick="toggleReplyForm('@reply.CommentPostId')">
+                                                            <button class="custom-reply-btn" onclick="topicToggleReplyForm('@reply.CommentPostId')">
                                                                 <i class="fas fa-reply"></i> Trả lời
                                                             </button>
                                                         </div>
 
                                                         <!-- Form trả lời cho reply -->
                                                         <div class="reply-form mt-2" id="reply-form-@reply.CommentPostId" style="display: none;">
-                                                            <form class="nested-reply-form" onsubmit="submitPostReply(event, @reply.CommentPostId)" enctype="multipart/form-data">
+                                                            <form class="custom-reply-form" onsubmit="submitPostReply(event, @reply.CommentPostId)" enctype="multipart/form-data">
                                                                 @Html.AntiForgeryToken()
                                                                 <input type="hidden" name="ParentCommentId" value="@reply.CommentPostId" />
                                                                 <input type="hidden" name="PostId" value="@Model.PostId" />
-                                                                <div class="mb-2">
-                                                                    <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
-                                                                </div>
-                                                                <div class="mb-2">
-                                                                    <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                                                                <div class="input-wrapper">
+                                                                    <input type="text" name="Content" class="custom-comment-input" placeholder="Nhập phản hồi..." autocomplete="off" required />
+                                                                    <label class="image-upload-label">
+                                                                        <input type="file" name="ImageUpload" accept="image/*" style="display:none;" />
+                                                                        <i class="fas fa-image"></i>
+                                                                    </label>
                                                                 </div>
                                                                 <div class="d-flex justify-content-end">
-                                                                    <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('@reply.CommentPostId')">Hủy</button>
-                                                                    <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                                                                    <button type="button" class="btn btn-light me-2" onclick="topicToggleReplyForm('@reply.CommentPostId')">Hủy</button>
+                                                                    <button type="submit" class="btn-submit-comment">Gửi phản hồi</button>
                                                                 </div>
                                                             </form>
                                                         </div>
@@ -345,342 +348,344 @@
 </div>
 
 <script>
-var postIdToDelete = null;
+    var postIdToDelete = null;
 
-function toggleCommentBlock(postId) {
-    const block = document.getElementById(`comment-block-${postId}`);
-    const wasHidden = block.style.display === 'none';
-    block.style.display = wasHidden ? 'block' : 'none';
+    function toggleCommentBlock(postId) {
+        const block = document.getElementById(`comment-block-${postId}`);
+        const wasHidden = block.style.display === 'none';
+        block.style.display = wasHidden ? 'block' : 'none';
 
-    if (wasHidden) {
-        const textarea = block.querySelector('textarea');
-        if (textarea) textarea.focus();
-    }
-}
-
-function toggleReplyForm(commentId) {
-    var form = document.getElementById('reply-form-' + commentId);
-    if (form) {
-        form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
-        if (form.style.display === 'block') {
-            var textarea = form.querySelector('textarea');
+        if (wasHidden) {
+            const textarea = block.querySelector('textarea');
             if (textarea) textarea.focus();
         }
     }
-}
 
-function togglePostMenu(postId) {
-    event.stopPropagation();
-    const menu = document.getElementById(`post-menu-${postId}`);
-    if (!menu) return;
-
-    const isVisible = menu.classList.contains('show');
-    
-    // Hide all menus first
-    document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(m => {
-            m.classList.remove('show');
-    });
-    
-    // Show this menu if it wasn't visible
-    if (!isVisible) {
-        menu.classList.add('show');
+    function topicToggleReplyForm(commentId) {
+        var form = document.getElementById('reply-form-' + commentId);
+        if (form) {
+            form.style.display = (form.style.display === 'none' || form.style.display === '') ? 'block' : 'none';
+            if (form.style.display === 'block') {
+                var textarea = form.querySelector('textarea');
+                if (textarea) textarea.focus();
+            }
+        }
     }
-}
 
-function showDeletePostModal(postId) {
-    postIdToDelete = postId;
-    var modal = new bootstrap.Modal(document.getElementById('deletePostModal'));
-    modal.show();
-}
+    function togglePostMenu(postId) {
+        event.stopPropagation();
+        const menu = document.getElementById(`post-menu-${postId}`);
+        if (!menu) return;
 
-var confirmDeleteBtn = document.getElementById('confirmDeletePostBtn');
-if (confirmDeleteBtn) {
-    confirmDeleteBtn.onclick = function() {
-        if (postIdToDelete) {
-            fetch(`/Posts/Delete/${postIdToDelete}`, {
-                method: 'POST',
-                headers: {
-                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
-                }
-            })
-            .then(response => {
-                if (response.redirected) {
-                    window.location.href = response.url;
-                } else {
-                    window.location.reload();
-                }
+        const isVisible = menu.classList.contains('show');
+
+        // Hide all menus first
+        document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(m => {
+                m.classList.remove('show');
+        });
+
+        // Show this menu if it wasn't visible
+        if (!isVisible) {
+            menu.classList.add('show');
+        }
+    }
+
+    function showDeletePostModal(postId) {
+        postIdToDelete = postId;
+        var modal = new bootstrap.Modal(document.getElementById('deletePostModal'));
+        modal.show();
+    }
+
+    var confirmDeleteBtn = document.getElementById('confirmDeletePostBtn');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.onclick = function() {
+            if (postIdToDelete) {
+                fetch(`/Posts/Delete/${postIdToDelete}`, {
+                    method: 'POST',
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    }
+                })
+                .then(response => {
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        window.location.reload();
+                    }
+                });
+            }
+        };
+    }
+
+    // Close menus when clicking outside
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.post-actions') &&
+            !event.target.closest('.document-actions') &&
+            !event.target.closest('.topic-actions')) {
+            document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(menu => {
+                menu.classList.remove('show');
             });
         }
-    };
-}
+    });
 
-// Close menus when clicking outside
-document.addEventListener('click', function(event) {
-    if (!event.target.closest('.post-actions') && 
-        !event.target.closest('.document-actions') && 
-        !event.target.closest('.topic-actions')) {
-        document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(menu => {
-            menu.classList.remove('show');
+    // Prevent menu from closing when clicking inside
+    document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(menu => {
+        menu.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+    });
+
+    function toggleLike(postId) {
+        const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
+        const likeCountSpan = likeBtn.querySelector('.count-number');
+
+        fetch(`/Posts/ToggleLike/${postId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Cập nhật UI dựa trên phản hồi từ server
+                if (data.isLiked) {
+                    likeBtn.classList.add('liked');
+                } else {
+                    likeBtn.classList.remove('liked');
+                }
+                likeCountSpan.textContent = data.likeCount;
+            } else {
+                alert(data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi thực hiện thao tác. Vui lòng thử lại sau.');
         });
     }
-});
 
-// Prevent menu from closing when clicking inside
-document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(menu => {
-    menu.addEventListener('click', function(event) {
-        event.stopPropagation();
-    });
-});
+    function toggleSave(id, type) {
+        const saveBtn = document.querySelector(`.save-btn[data-${type}-id="${id}"]`);
+        const saveCountSpan = saveBtn.querySelector('.count-number');
 
-function toggleLike(postId) {
-    const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
-    const likeCountSpan = likeBtn.querySelector('.count-number');
-    
-    fetch(`/Posts/ToggleLike/${postId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Cập nhật UI dựa trên phản hồi từ server
-            if (data.isLiked) {
-                likeBtn.classList.add('liked');
-            } else {
-                likeBtn.classList.remove('liked');
+        fetch(`/Saves/ToggleSave/${type}/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.needLogin) {
+                window.location.href = '/Account/Login';
+                return;
             }
-            likeCountSpan.textContent = data.likeCount;
-        } else {
-            alert(data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Có lỗi xảy ra khi thực hiện thao tác. Vui lòng thử lại sau.');
-    });
-}
-
-function toggleSave(id, type) {
-    const saveBtn = document.querySelector(`.save-btn[data-${type}-id="${id}"]`);
-    const saveCountSpan = saveBtn.querySelector('.count-number');
-    
-    fetch(`/Saves/ToggleSave/${type}/${id}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-        },
-        credentials: 'same-origin'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.needLogin) {
-            window.location.href = '/Account/Login';
-            return;
-        }
-        if (data.success) {
-            if (data.isSaved) {
-                saveBtn.classList.add('saved');
+            if (data.success) {
+                if (data.isSaved) {
+                    saveBtn.classList.add('saved');
+                } else {
+                    saveBtn.classList.remove('saved');
+                }
+                saveCountSpan.textContent = data.saveCount;
             } else {
-                saveBtn.classList.remove('saved');
+                alert(data.message);
             }
-            saveCountSpan.textContent = data.saveCount;
-        } else {
-            alert(data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Có lỗi xảy ra khi thực hiện thao tác. Vui lòng thử lại sau.');
-    });
-}
-
-function getPostRoleText(role) {
-    switch (role) {
-        case 'Lecturer': return 'Giảng viên, CVHT';
-        case 'Admin': return 'Nhân viên';
-        case 'Student': return 'Sinh viên';
-        default: return 'Người dùng';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi thực hiện thao tác. Vui lòng thử lại sau.');
+        });
     }
-}
 
-function createPostCommentElement(comment, postId) {
-    return `
-        <div class="comment-item d-flex mb-3" id="comment-${comment.id}">
-            <img src="${comment.avatar}" alt="Avatar" class="comment-avatar me-2" />
-            <div class="comment-body">
-                <div class="comment-header d-flex justify-content-between">
-                    <div>
-                        <strong class="text-primary">
-                            ${comment.username} –
-                            <span class="role">${getPostRoleText(comment.role)}</span>
-                        </strong>
-                    </div>
-                    <small class="text-muted">${comment.createdAt}</small>
-                </div>
-                <div class="comment-content">
-                    ${comment.content}
-                    ${comment.imageUrl ? `<div class="comment-image"><img src="${comment.imageUrl}" alt="Ảnh bình luận" /></div>` : ''}
-                </div>
-                <div class="comment-actions">
-                    <button class="custom-reply-btn" onclick="toggleReplyForm('${comment.id}')">
-                        <i class="fas fa-reply"></i> Trả lời
-                    </button>
-                </div>
-                <div class="reply-form mt-2" id="reply-form-${comment.id}" style="display: none;">
-                    <form class="nested-reply-form" onsubmit="submitPostReply(event, ${comment.id})" enctype="multipart/form-data">
-                        <input type="hidden" name="ParentCommentId" value="${comment.id}" />
-                        <input type="hidden" name="PostId" value="${postId}" />
-                        <input type="hidden" name="__RequestVerificationToken" value="${document.querySelector('input[name=__RequestVerificationToken]')?.value || ''}" />
-                        <div class="mb-2">
-                            <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
-                        </div>
-                        <div class="mb-2">
-                            <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
-                        </div>
-                        <div class="d-flex justify-content-end">
-                            <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('${comment.id}')">Hủy</button>
-                            <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
-                        </div>
-                    </form>
-                </div>
-                <div class="nested-replies" id="replies-${comment.id}"></div>
-            </div>
-        </div>
-    `;
-}
+    function getPostRoleText(role) {
+        switch (role) {
+            case 'Lecturer': return 'Giảng viên, CVHT';
+            case 'Admin': return 'Nhân viên';
+            case 'Student': return 'Sinh viên';
+            default: return 'Người dùng';
+        }
+    }
 
-function createPostReplyElement(reply, postId, level = 1) {
-    const globalToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
-    const levelClass = level === 1 ? 'reply-level-1' : 'reply-level-2';
-    return `
-        <div class="reply-item ${levelClass}" id="reply-${reply.id}">
-            <div class="reply-line"></div>
-            <div class="d-flex">
-                <img src="${reply.avatar}" alt="Avatar" class="reply-avatar" />
-                <div class="reply-content">
-                    <div class="reply-header">
-                        <strong class="reply-username">
-                            ${reply.username} –
-                            <span class="role">${getPostRoleText(reply.role)}</span>
-                        </strong>
-                        <small class="reply-time">${reply.createdAt}</small>
+    function createPostCommentElement(comment, postId) {
+        return `
+            <div class="comment-item d-flex mb-3" id="comment-${comment.id}">
+                <img src="${comment.avatar}" alt="Avatar" class="comment-avatar me-2" />
+                <div class="comment-body">
+                    <div class="comment-header d-flex justify-content-between">
+                        <div>
+                            <strong class="text-primary">
+                                ${comment.username} –
+                                <span class="role">${getPostRoleText(comment.role)}</span>
+                            </strong>
+                        </div>
+                        <small class="text-muted">${comment.createdAt}</small>
                     </div>
-                    <div class="reply-text">
-                        ${reply.content}
-                        ${reply.imageUrl ? `<div class="reply-image"><img src="${reply.imageUrl}" alt="Ảnh phản hồi" /></div>` : ''}
+                    <div class="comment-content">
+                        ${comment.content}
+                        ${comment.imageUrl ? `<div class="comment-image"><img src="${comment.imageUrl}" alt="Ảnh bình luận" /></div>` : ''}
                     </div>
-                    <div class="reply-actions">
-                        <button class="custom-reply-btn" onclick="toggleReplyForm('${reply.id}')">
+                    <div class="comment-actions">
+                        <button class="custom-reply-btn" onclick="topicToggleReplyForm('${comment.id}')">
                             <i class="fas fa-reply"></i> Trả lời
                         </button>
                     </div>
-                    <div class="reply-form mt-2" id="reply-form-${reply.id}" style="display: none;">
-                        <form class="nested-reply-form" onsubmit="submitPostReply(event, ${reply.id})" enctype="multipart/form-data">
-                            <input type="hidden" name="ParentCommentId" value="${reply.id}" />
+                    <div class="reply-form mt-2" id="reply-form-${comment.id}" style="display: none;">
+                        <form class="custom-reply-form" onsubmit="submitPostReply(event, ${comment.id})" enctype="multipart/form-data">
+                            <input type="hidden" name="ParentCommentId" value="${comment.id}" />
                             <input type="hidden" name="PostId" value="${postId}" />
-                            <input type="hidden" name="__RequestVerificationToken" value="${globalToken}" />
-                            <div class="mb-2">
-                                <textarea name="Content" class="form-control" placeholder="Nhập phản hồi..." rows="2" required></textarea>
-                            </div>
-                            <div class="mb-2">
-                                <input type="file" name="ImageUpload" class="form-control" accept="image/*" />
+                            <input type="hidden" name="__RequestVerificationToken" value="${document.querySelector('input[name=__RequestVerificationToken]')?.value || ''}" />
+                            <div class="input-wrapper">
+                                <input type="text" name="Content" class="custom-comment-input" placeholder="Nhập phản hồi..." autocomplete="off" required />
+                                <label class="image-upload-label">
+                                    <input type="file" name="ImageUpload" accept="image/*" style="display:none;" />
+                                    <i class="fas fa-image"></i>
+                                </label>
                             </div>
                             <div class="d-flex justify-content-end">
-                                <button type="button" class="btn btn-light me-2" onclick="toggleReplyForm('${reply.id}')">Hủy</button>
-                                <button type="submit" class="btn btn-purple">Gửi phản hồi</button>
+                                <button type="button" class="btn btn-light me-2" onclick="topicToggleReplyForm('${comment.id}')">Hủy</button>
+                                <button type="submit" class="btn-submit-comment">Gửi phản hồi</button>
                             </div>
                         </form>
                     </div>
-                    <div class="nested-replies" id="replies-${reply.id}"></div>
+                    <div class="nested-replies" id="replies-${comment.id}"></div>
                 </div>
             </div>
-        </div>
-    `;
-}
-
-async function submitPostComment(event, postId) {
-    event.preventDefault();
-    const form = event.target;
-    const formData = new FormData(form);
-    const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
-    const token = tokenInput ? tokenInput.value : '';
-    try {
-        const response = await fetch('/CommentPosts/Create', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'RequestVerificationToken': token
-            }
-        });
-        const result = await response.json();
-        if (result.success) {
-            const commentsList = document.getElementById('comments-list-' + postId);
-            if (commentsList) {
-                commentsList.insertAdjacentHTML('afterbegin', createPostCommentElement(result.comment, postId));
-            }
-            form.reset();
-        } else {
-            alert(result.message || 'Có lỗi xảy ra khi thêm bình luận');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Có lỗi xảy ra khi thêm bình luận');
+        `;
     }
-}
 
-async function submitPostReply(event, parentCommentId) {
-    event.preventDefault();
-    const form = event.target;
-    const formData = new FormData(form);
-    const postId = form.querySelector('input[name="PostId"]').value;
-    const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
-    const token = tokenInput ? tokenInput.value : '';
-    try {
-        const response = await fetch('/CommentPosts/CreateResponse', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'RequestVerificationToken': token
+    function createPostReplyElement(reply, postId, level = 1) {
+        const globalToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+        const levelClass = level === 1 ? 'reply-level-1' : 'reply-level-2';
+        return `
+            <div class="reply-item ${levelClass}" id="reply-${reply.id}">
+                <div class="reply-line"></div>
+                <div class="d-flex">
+                    <img src="${reply.avatar}" alt="Avatar" class="reply-avatar" />
+                    <div class="reply-content">
+                        <div class="reply-header">
+                            <strong class="reply-username">
+                                ${reply.username} –
+                                <span class="role">${getPostRoleText(reply.role)}</span>
+                            </strong>
+                            <small class="reply-time">${reply.createdAt}</small>
+                        </div>
+                        <div class="reply-text">
+                            ${reply.content}
+                            ${reply.imageUrl ? `<div class="reply-image"><img src="${reply.imageUrl}" alt="Ảnh phản hồi" /></div>` : ''}
+                        </div>
+                        <div class="reply-actions">
+                            <button class="custom-reply-btn" onclick="topicToggleReplyForm('${reply.id}')">
+                                <i class="fas fa-reply"></i> Trả lời
+                            </button>
+                        </div>
+                        <div class="reply-form mt-2" id="reply-form-${reply.id}" style="display: none;">
+                            <form class="custom-reply-form" onsubmit="submitPostReply(event, ${reply.id})" enctype="multipart/form-data">
+                                <input type="hidden" name="ParentCommentId" value="${reply.id}" />
+                                <input type="hidden" name="PostId" value="${postId}" />
+                                <input type="hidden" name="__RequestVerificationToken" value="${globalToken}" />
+                                <div class="input-wrapper">
+                                    <input type="text" name="Content" class="custom-comment-input" placeholder="Nhập phản hồi..." autocomplete="off" required />
+                                    <label class="image-upload-label">
+                                        <input type="file" name="ImageUpload" accept="image/*" style="display:none;" />
+                                        <i class="fas fa-image"></i>
+                                    </label>
+                                </div>
+                                <div class="d-flex justify-content-end">
+                                    <button type="button" class="btn btn-light me-2" onclick="topicToggleReplyForm('${reply.id}')">Hủy</button>
+                                    <button type="submit" class="btn-submit-comment">Gửi phản hồi</button>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="nested-replies" id="replies-${reply.id}"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    async function submitPostComment(event, postId) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+        const token = tokenInput ? tokenInput.value : '';
+        try {
+            const response = await fetch('/CommentPosts/Create', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': token
+                }
+            });
+            const result = await response.json();
+            if (result.success) {
+                const commentsList = document.getElementById('comments-list-' + postId);
+                if (commentsList) {
+                    commentsList.insertAdjacentHTML('afterbegin', createPostCommentElement(result.comment, postId));
+                }
+                form.reset();
+            } else {
+                alert(result.message || 'Có lỗi xảy ra khi thêm bình luận');
             }
-        });
-        const result = await response.json();
-        if (result.success) {
-            let repliesContainer = document.getElementById('replies-' + parentCommentId);
-            if (!repliesContainer) {
-                const parentElement = document.getElementById('reply-' + parentCommentId) || document.getElementById('comment-' + parentCommentId);
-                if (parentElement) {
-                    const replyContent = parentElement.querySelector('.reply-content') || parentElement.querySelector('.comment-body');
-                    if (replyContent) {
-                        repliesContainer = document.createElement('div');
-                        repliesContainer.className = 'nested-replies';
-                        repliesContainer.id = 'replies-' + parentCommentId;
-                        replyContent.appendChild(repliesContainer);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi thêm bình luận');
+        }
+    }
+
+    async function submitPostReply(event, parentCommentId) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        const postId = form.querySelector('input[name="PostId"]').value;
+        const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+        const token = tokenInput ? tokenInput.value : '';
+        try {
+            const response = await fetch('/CommentPosts/CreateResponse', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': token
+                }
+            });
+            const result = await response.json();
+            if (result.success) {
+                let repliesContainer = document.getElementById('replies-' + parentCommentId);
+                if (!repliesContainer) {
+                    const parentElement = document.getElementById('reply-' + parentCommentId) || document.getElementById('comment-' + parentCommentId);
+                    if (parentElement) {
+                        const replyContent = parentElement.querySelector('.reply-content') || parentElement.querySelector('.comment-body');
+                        if (replyContent) {
+                            repliesContainer = document.createElement('div');
+                            repliesContainer.className = 'nested-replies';
+                            repliesContainer.id = 'replies-' + parentCommentId;
+                            replyContent.appendChild(repliesContainer);
+                        }
                     }
                 }
+                // Xác định cấp độ reply
+                let level = 1;
+                const parentReply = document.getElementById('reply-' + parentCommentId);
+                if (parentReply) {
+                    level = 2;
+                }
+                if (repliesContainer) {
+                    repliesContainer.insertAdjacentHTML('beforeend', createPostReplyElement(result.reply, postId, level));
+                }
+                form.reset();
+                topicToggleReplyForm(parentCommentId);
+            } else {
+                alert(result.message || 'Có lỗi xảy ra khi thêm phản hồi');
             }
-            // Xác định cấp độ reply
-            let level = 1;
-            const parentReply = document.getElementById('reply-' + parentCommentId);
-            if (parentReply) {
-                level = 2;
-            }
-            if (repliesContainer) {
-                repliesContainer.insertAdjacentHTML('beforeend', createPostReplyElement(result.reply, postId, level));
-            }
-            form.reset();
-            toggleReplyForm(parentCommentId);
-        } else {
-            alert(result.message || 'Có lỗi xảy ra khi thêm phản hồi');
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi thêm phản hồi');
         }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Có lỗi xảy ra khi thêm phản hồi');
     }
-}
 </script>
 
 <style>
@@ -824,21 +829,21 @@ async function submitPostReply(event, parentCommentId) {
         transition: all 0.2s ease;
     }
 
-    .action-btn:hover {
-        background-color: #f0f2f5;
-    }
+        .action-btn:hover {
+            background-color: #f0f2f5;
+        }
 
-    .action-btn i {
-        font-size: 18px;
-    }
+        .action-btn i {
+            font-size: 18px;
+        }
 
     .like-btn.liked {
         color: #e0245e;
     }
 
-    .like-btn.liked i {
-        animation: likeAnimation 0.3s ease;
-    }
+        .like-btn.liked i {
+            animation: likeAnimation 0.3s ease;
+        }
 
     .comment-btn:hover {
         color: #1877f2;
@@ -850,10 +855,18 @@ async function submitPostReply(event, parentCommentId) {
     }
 
     @@keyframes likeAnimation {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.2); }
-        100% { transform: scale(1); }
+        0% {
+            transform: scale(1);
         }
+
+        50% {
+            transform: scale(1.2);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
 
     .nested-replies {
         margin-left: 45px;
@@ -979,9 +992,9 @@ async function submitPostReply(event, parentCommentId) {
         height: 32px;
     }
 
-    .three-dots-btn:hover {
-        background-color: #f0f2f5;
-    }
+        .three-dots-btn:hover {
+            background-color: #f0f2f5;
+        }
 
     .post-menu {
         position: absolute;
@@ -996,9 +1009,9 @@ async function submitPostReply(event, parentCommentId) {
         z-index: 1001;
     }
 
-    .post-menu.show {
-        display: block !important;
-    }
+        .post-menu.show {
+            display: block !important;
+        }
 
     .menu-item {
         display: flex;
@@ -1013,24 +1026,24 @@ async function submitPostReply(event, parentCommentId) {
         white-space: nowrap;
     }
 
-    .menu-item i {
-        width: 16px;
-    }
+        .menu-item i {
+            width: 16px;
+        }
 
-    .menu-item:hover {
-        background-color: #f0f2f5;
-        text-decoration: none;
-    }
+        .menu-item:hover {
+            background-color: #f0f2f5;
+            text-decoration: none;
+        }
 
-    .menu-item.delete {
-        color: #dc3545;
-    }
+        .menu-item.delete {
+            color: #dc3545;
+        }
 
-    .menu-item.delete:hover {
-        background-color: #ffebee;
-        color: #dc3545;
-        text-decoration: none;
-    }
+            .menu-item.delete:hover {
+                background-color: #ffebee;
+                color: #dc3545;
+                text-decoration: none;
+            }
 
     .mentioned-users {
         padding: 8px 0;
@@ -1064,17 +1077,72 @@ async function submitPostReply(event, parentCommentId) {
         color: #65676b;
     }
 
-    .save-btn.saved {
-        color: #1877f2;
-    }
+        .save-btn.saved {
+            color: #1877f2;
+        }
 
-    .save-btn.saved i {
-        animation: saveAnimation 0.3s ease;
-    }
+            .save-btn.saved i {
+                animation: saveAnimation 0.3s ease;
+            }
 
     @@keyframes saveAnimation {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.2); }
-        100% { transform: scale(1); }
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.2);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .custom-comment-form, .custom-reply-form {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 0;
+    }
+    .input-wrapper {
+        display: flex;
+        align-items: center;
+        background: #fafafd;
+        border-radius: 24px;
+        padding: 6px 16px;
+        border: 1px solid #eee;
+        position: relative;
+    }
+    .custom-comment-input {
+        border: none;
+        background: transparent;
+        flex: 1;
+        outline: none;
+        font-size: 1rem;
+        padding: 8px 0;
+    }
+    .image-upload-label {
+        cursor: pointer;
+        margin-left: 8px;
+        color: #a259c3;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+    }
+    .btn-submit-comment {
+        background: linear-gradient(90deg, #a259c3, #6a11cb);
+        color: #fff;
+        border: none;
+        border-radius: 20px;
+        padding: 8px 24px;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 6px;
+        align-self: flex-start;
+        transition: background 0.2s;
+    }
+    .btn-submit-comment:hover {
+        background: linear-gradient(90deg, #6a11cb, #a259c3);
     }
 </style>

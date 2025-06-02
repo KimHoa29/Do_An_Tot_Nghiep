@@ -12,6 +12,8 @@ using System.Security.Claims;
 using System.Net.Http;
 using System.Text.Json;
 using Do_An_Tot_Nghiep.ViewModels;
+using System.Net.Mail;
+using System.Net;
 
 namespace Do_An_Tot_Nghiep.Controllers
 {
@@ -61,34 +63,41 @@ namespace Do_An_Tot_Nghiep.Controllers
 
         // Phương thức xử lý đăng nhập
         [HttpPost]
-        public async Task<IActionResult> Login(string username, string password)
+        public async Task<IActionResult> Login(string role, string? userId, string? username, string password)
         {
-            Console.WriteLine($"📌 Nhận dữ liệu đăng nhập: {username} - {password}");
+            Console.WriteLine($"📌 Nhận dữ liệu đăng nhập: role={role}, userId={userId}, username={username}, password={password}");
 
-            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            if (string.IsNullOrEmpty(role) || string.IsNullOrEmpty(password) || (role == "Admin" && string.IsNullOrEmpty(username)) || ((role == "Student" || role == "Lecturer") && string.IsNullOrEmpty(userId)))
             {
-                Console.WriteLine("❌ Lỗi: Tên đăng nhập hoặc mật khẩu trống.");
-                ModelState.AddModelError("", "Tên đăng nhập và mật khẩu không được để trống.");
+                ModelState.AddModelError("", "Vui lòng nhập đầy đủ thông tin đăng nhập.");
                 return View();
             }
 
             var hashedPassword = HashPassword(password);
-            Console.WriteLine($"🔐 Mật khẩu đã hash: {hashedPassword}");
-
-            var user = _context.Users
-                .AsEnumerable()
-                .FirstOrDefault(u => 
-                    BaseController.ToSimpleUsername(u.Username) == username.ToLower() 
-                    && u.Password == hashedPassword);
+            User? user = null;
+            if (role == "Admin")
+            {
+                user = await _context.Users.FirstOrDefaultAsync(u => u.Role == "Admin" && u.Username == username && u.Password == hashedPassword);
+            }
+            else
+            {
+                if (int.TryParse(userId, out int userIdInt))
+                {
+                    user = await _context.Users.FirstOrDefaultAsync(u => u.Role == role && u.UserId == userIdInt && u.Password == hashedPassword);
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Mã tài khoản không hợp lệ.");
+                    return View();
+                }
+            }
 
             if (user == null)
             {
-                Console.WriteLine("❌ Không tìm thấy tài khoản.");
-                ModelState.AddModelError("", "Tên đăng nhập hoặc mật khẩu không đúng.");
+                ModelState.AddModelError("", "Thông tin đăng nhập không đúng.");
                 return View();
             }
 
-            Console.WriteLine($"✅ Đăng nhập thành công! UserId: {user.UserId}, Role: {user.Role}");
             CurrentUserID = user.UserId.ToString();
             CurrentUserName = user.Username;
             CurrentUserRole = user.Role;
@@ -96,9 +105,9 @@ namespace Do_An_Tot_Nghiep.Controllers
             {
                 return RedirectToAction("Index", "Statistics");
             }
-            else 
+            else
             {
-                return RedirectToAction("Index", "Home"); // hoặc có thể chuyển tới trang riêng cho giảng viên
+                return RedirectToAction("Index", "Home");
             }
         }
 
@@ -118,22 +127,26 @@ namespace Do_An_Tot_Nghiep.Controllers
                 return View();
             }
 
-            // Kiểm tra xem tên người dùng đã tồn tại chưa
-            if (await _context.Users.AnyAsync(u => u.Username.Equals(model.Username) ))
+            // Kiểm tra xem mã tài khoản đã tồn tại chưa
+            if (await _context.Users.AnyAsync(u => u.UserId == model.UserId))
             {
-                ModelState.AddModelError("", "Tên người dùng đã tồn tại.");
+                ModelState.AddModelError("", "Mã tài khoản đã tồn tại.");
                 return View();
             }
+
+            // Cho phép tên đăng nhập trùng
+            // Không kiểm tra Username trùng nữa
 
             // Mã hóa mật khẩu trước khi lưu
             model.Password = HashPassword(model.Password);
             model.CreatedAt = DateTime.Now;
+            model.UpdatedAt = DateTime.Now;
 
             _context.Users.Add(model);
             await _context.SaveChangesAsync();
 
             // Chuyển hướng đến trang đăng nhập sau khi đăng ký thành công
-            return RedirectToAction("Login");
+            return RedirectToAction("Register");
         }
 
         // Phương thức hiển thị thông tin cá nhân
@@ -404,5 +417,130 @@ namespace Do_An_Tot_Nghiep.Controllers
                 return View();
             }
         }
+
+        // Phương thức hiển thị form quên mật khẩu
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        // Phương thức xử lý quên mật khẩu
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(string email)
+        {
+            if (string.IsNullOrEmpty(email))
+            {
+                ModelState.AddModelError("", "Vui lòng nhập email của bạn.");
+                return View();
+            }
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+            {
+                // Vẫn hiển thị thông báo thành công để bảo mật
+                TempData["SuccessMessage"] = "Nếu email của bạn tồn tại trong hệ thống, chúng tôi sẽ gửi link đặt lại mật khẩu.";
+                return RedirectToAction("Login");
+            }
+
+            // Tạo token reset password
+            var token = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+            user.ResetPasswordToken = token;
+            user.ResetPasswordTokenExpiry = DateTime.Now.AddHours(24); // Token hết hạn sau 24 giờ
+            await _context.SaveChangesAsync();
+
+            // Gửi email reset password
+            var resetLink = Url.Action("ResetPassword", "Account", 
+                new { token = token }, Request.Scheme);
+
+            // Cấu hình email
+            var smtpClient = new SmtpClient("smtp.gmail.com")
+            {
+                Port = 587,
+                Credentials = new NetworkCredential("hethongcvht@gmail.com", "qbpm dnag qczm kvgq"), // Thay thế bằng email và mật khẩu ứng dụng của bạn
+                EnableSsl = true,
+            };
+
+            var mailMessage = new MailMessage
+            {
+                From = new MailAddress("hethongcvht@gmail.com", "Hệ thống CVHT"), // Thay thế bằng email của bạn
+                Subject = "Đặt lại mật khẩu",
+                Body = $@"
+                    <h2>Yêu cầu đặt lại mật khẩu</h2>
+                    <p>Xin chào {user.Username},</p>
+                    <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
+                    <p>Vui lòng click vào link sau để đặt lại mật khẩu:</p>
+                    <p><a href='{resetLink}'>{resetLink}</a></p>
+                    <p>Link này sẽ hết hạn sau 24 giờ.</p>
+                    <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>
+                    <p>Trân trọng,<br>Hệ thống cố vấn học tập</p>",
+                IsBodyHtml = true,
+            };
+            mailMessage.To.Add(email);
+
+            try
+            {
+                await smtpClient.SendMailAsync(mailMessage);
+                TempData["SuccessMessage"] = "Vui lòng kiểm tra email của bạn để đặt lại mật khẩu.";
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Có lỗi xảy ra khi gửi email: " + ex.ToString());
+                return View();
+            }
+
+            return RedirectToAction("Login");
+        }
+
+        // Phương thức hiển thị form đặt lại mật khẩu
+        public IActionResult ResetPassword(string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login");
+            }
+
+            return View(new ResetPasswordViewModel { Token = token });
+        }
+
+        // Phương thức xử lý đặt lại mật khẩu
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.ResetPasswordToken == model.Token && 
+                                        u.ResetPasswordTokenExpiry > DateTime.Now);
+
+            if (user == null)
+            {
+                ModelState.AddModelError("", "Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.");
+                return View(model);
+            }
+
+            user.Password = HashPassword(model.NewPassword);
+            user.ResetPasswordToken = null;
+            user.ResetPasswordTokenExpiry = null;
+            user.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Mật khẩu đã được đặt lại thành công. Vui lòng đăng nhập lại.";
+            return RedirectToAction("Login");
+        }
+    }
+
+    public class ResetPasswordViewModel
+    {
+        public string Token { get; set; }
+        public string NewPassword { get; set; }
+        public string ConfirmPassword { get; set; }
     }
 }

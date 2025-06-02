@@ -24,55 +24,57 @@ namespace Do_An_Tot_Nghiep.Controllers
         }
         public async Task<IActionResult> Index(string searchString)
         {
-
             if (!IsLogin)
             {
                 return RedirectToAction("Login", "Account");
             }
-            else
+
+            var query = _context.Topics
+                .Include(t => t.User)
+                .Include(t => t.TopicGroups)
+                .Include(t => t.TopicUsers)
+                .Include(t => t.TopicTags)
+                    .ThenInclude(tt => tt.Tag)
+                .Include(t => t.Comments)
+                    .ThenInclude(c => c.User)
+                .AsQueryable();
+
+            // Tìm kiếm
+            if (!string.IsNullOrEmpty(searchString))
             {
-                var query = _context.Topics
-                    .Include(t => t.User)
-                    .Include(t => t.TopicGroups)
-                    .Include(t => t.TopicUsers)
-                    .Include(t => t.TopicTags)
-                        .ThenInclude(tt => tt.Tag)
-                    .Include(t => t.Comments)
-                        .ThenInclude(c => c.User)
-                    .AsQueryable();
-
-                // Tìm kiếm
-                if (!string.IsNullOrEmpty(searchString))
-                {
-                    query = query.Where(t => t.Title.Contains(searchString) || t.Content.Contains(searchString));
-                }
-
-                // Lấy danh sách các nhóm mà người dùng thuộc về
-                var userGroupIds = _context.GroupUsers
-                    .Where(gu => gu.UserId.ToString() == CurrentUserID)
-                    .Select(gu => gu.GroupId)
-                    .ToList();
-
-                // Lọc quyền truy cập
-                if (CurrentUserRole != "Admin")
-                {
-                    query = query.Where(t =>
-                        t.UserId.ToString() == CurrentUserID ||
-                        t.VisibilityType == "public" ||
-                        (t.VisibilityType == "private" && t.UserId.ToString() == CurrentUserID) ||
-                        (t.VisibilityType == "group" && t.TopicGroups.Any(g => userGroupIds.Contains(g.GroupId))) ||
-                        (t.VisibilityType == "custom" && t.TopicUsers.Any(u => u.UserId.ToString() == CurrentUserID))
-                    );
-                }
-
-                var result = await query.ToListAsync();
-                return View(result);
+                query = query.Where(t => t.Title.Contains(searchString) || t.Content.Contains(searchString));
             }
+
+            // Lấy danh sách các nhóm mà người dùng thuộc về
+            var userGroupIds = _context.GroupUsers
+                .Where(gu => gu.UserId.ToString() == CurrentUserID)
+                .Select(gu => gu.GroupId)
+                .ToList();
+
+            // Lọc quyền truy cập
+            if (CurrentUserRole != "Admin")
+            {
+                query = query.Where(t =>
+                    t.UserId.ToString() == CurrentUserID ||
+                    t.VisibilityType == "public" ||
+                    (t.VisibilityType == "private" && t.UserId.ToString() == CurrentUserID) ||
+                    (t.VisibilityType == "group" && t.TopicGroups.Any(g => userGroupIds.Contains(g.GroupId))) ||
+                    (t.VisibilityType == "custom" && t.TopicUsers.Any(u => u.UserId.ToString() == CurrentUserID))
+                );
+            }
+
+            var result = await query.ToListAsync();
+            return View(result);
         }
 
         // GET: Topics/Details/5
         public async Task<IActionResult> Details(int? id)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null)
             {
                 return NotFound();
@@ -80,15 +82,38 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             var topic = await _context.Topics
                 .Include(t => t.User)
-                .Include(t => t.TopicTags)        // Thêm dòng này
+                .Include(t => t.TopicTags)
                     .ThenInclude(tt => tt.Tag)
                 .Include(t => t.Comments)
-                        .ThenInclude(c => c.User)// Và dòng này
+                    .ThenInclude(c => c.User)
+                .Include(t => t.TopicGroups)
+                .Include(t => t.TopicUsers)
                 .FirstOrDefaultAsync(m => m.TopicId == id);
 
             if (topic == null)
             {
                 return NotFound();
+            }
+
+            // Kiểm tra quyền truy cập
+            if (CurrentUserRole != "Admin")
+            {
+                var userGroupIds = _context.GroupUsers
+                    .Where(gu => gu.UserId.ToString() == CurrentUserID)
+                    .Select(gu => gu.GroupId)
+                    .ToList();
+
+                var hasAccess = topic.UserId.ToString() == CurrentUserID ||
+                              topic.VisibilityType == "public" ||
+                              (topic.VisibilityType == "private" && topic.UserId.ToString() == CurrentUserID) ||
+                              (topic.VisibilityType == "group" && topic.TopicGroups.Any(g => userGroupIds.Contains(g.GroupId))) ||
+                              (topic.VisibilityType == "custom" && topic.TopicUsers.Any(u => u.UserId.ToString() == CurrentUserID));
+
+                if (!hasAccess)
+                {
+                    TempData["Error"] = "Bạn không có quyền truy cập chủ đề này.";
+                    return RedirectToAction(nameof(Index));
+                }
             }
 
             return View(topic);
@@ -101,31 +126,41 @@ namespace Do_An_Tot_Nghiep.Controllers
             {
                 return RedirectToAction("Login", "Account");
             }
-            else
-            {
-                ViewBag.Tags = new MultiSelectList(_context.Tags.ToList(), "TagId", "Name");
-                ViewBag.Users = new MultiSelectList(_context.Users.ToList(), "UserId", "Username");
-                ViewBag.Groups = new MultiSelectList(_context.Groups.ToList(), "GroupId", "GroupName");
-                ViewBag.VisibilityTypes = new SelectList(new[] {
-                    new { Value = "public", Text = "Công khai" },
-                    new { Value = "private", Text = "Riêng tư" },
-                    new { Value = "group", Text = "Theo nhóm" },
-                    new { Value = "custom", Text = "Tùy chọn người dùng" }
-                }, "Value", "Text");
-                ViewBag.Username = CurrentUserName;
-                ViewBag.Role = CurrentUserRole;
-                var currentUser = await _context.Users.FirstOrDefaultAsync(m => m.UserId.ToString().Equals(CurrentUserID));
-                ViewBag.Avatar = currentUser?.Avatar;
-                return View();
-            }
+
+            ViewBag.Tags = new MultiSelectList(_context.Tags.ToList(), "TagId", "Name");
+            ViewBag.Users = new MultiSelectList(_context.Users.Where(u => u.Role != "Admin").ToList(), "UserId", "Username");
+            
+            // Lấy danh sách các nhóm mà người dùng hiện tại là thành viên
+            var userGroups = await _context.GroupUsers
+                .Where(gu => gu.UserId.ToString() == CurrentUserID)
+                .Select(gu => gu.Group)
+                .ToListAsync();
+            
+            ViewBag.Groups = new MultiSelectList(userGroups, "GroupId", "GroupName");
+            ViewBag.VisibilityTypes = new SelectList(new[] {
+                new { Value = "public", Text = "Công khai" },
+                new { Value = "private", Text = "Riêng tư" },
+                new { Value = "group", Text = "Theo nhóm" },
+                new { Value = "custom", Text = "Tùy chọn người dùng" }
+            }, "Value", "Text");
+            ViewBag.Username = CurrentUserName;
+            ViewBag.Role = CurrentUserRole;
+            var currentUser = await _context.Users.FirstOrDefaultAsync(m => m.UserId.ToString().Equals(CurrentUserID));
+            ViewBag.Avatar = currentUser?.Avatar;
+            return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Topic topic, IFormFile? imageFile, IFormFile? documentFile, int[] selectedGroups, int[] selectedUsers, int[] selectedTagIds)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             ViewBag.Tags = new MultiSelectList(_context.Tags.ToList(), "TagId", "Name", selectedTagIds);
-            ViewBag.Users = new MultiSelectList(_context.Users.ToList(), "UserId", "Username", selectedUsers);
+            ViewBag.Users = new MultiSelectList(_context.Users.Where(u => u.Role != "Admin").ToList(), "UserId", "Username", selectedUsers);
             ViewBag.Groups = new MultiSelectList(_context.Groups.ToList(), "GroupId", "GroupName", selectedGroups);
             ViewBag.VisibilityTypes = new SelectList(new[] {
                 new { Value = "public", Text = "Công khai" },
@@ -284,6 +319,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         // GET: Topics/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null)
             {
                 return NotFound();
@@ -300,9 +340,28 @@ namespace Do_An_Tot_Nghiep.Controllers
                 return NotFound();
             }
 
+            // Kiểm tra quyền chỉnh sửa
+            if (CurrentUserRole != "Admin" && topic.UserId.ToString() != CurrentUserID)
+            {
+                TempData["Error"] = "Bạn không có quyền chỉnh sửa chủ đề này.";
+                return RedirectToAction(nameof(Index));
+            }
+
             ViewBag.Tags = new MultiSelectList(_context.Tags.ToList(), "TagId", "Name", topic.TopicTags.Select(t => t.TagId));
-            ViewBag.Users = new MultiSelectList(_context.Users.ToList(), "UserId", "Username", topic.TopicUsers.Select(tu => tu.UserId));
-            ViewBag.Groups = new MultiSelectList(_context.Groups.ToList(), "GroupId", "GroupName", topic.TopicGroups.Select(tg => tg.GroupId));
+            ViewBag.Users = new MultiSelectList(_context.Users.Where(u => u.Role != "Admin").ToList(), "UserId", "Username", topic.TopicUsers.Select(tu => tu.UserId));
+            
+            // Lấy danh sách các nhóm mà người dùng hiện tại là thành viên
+            var userGroups = await _context.GroupUsers
+                .Where(gu => gu.UserId.ToString() == CurrentUserID)
+                .Select(gu => gu.Group)
+                .ToListAsync();
+            
+            // Lấy các nhóm đã được chọn trước đó
+            var selectedGroupIds = topic.TopicGroups.Select(tg => tg.GroupId).ToList();
+            
+            // Tạo MultiSelectList với các nhóm của người dùng và các nhóm đã chọn
+            ViewBag.Groups = new MultiSelectList(userGroups, "GroupId", "GroupName", selectedGroupIds);
+            
             ViewBag.VisibilityTypes = new SelectList(new[] {
                 new { Value = "public", Text = "Công khai" },
                 new { Value = "private", Text = "Riêng tư" },
@@ -322,6 +381,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Topic model, IFormFile? imageFile, IFormFile? documentFile, int[] selectedUsers, int[] selectedGroups, int[] selectedTagIds)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id != model.TopicId)
                 return NotFound();
 
@@ -333,6 +397,13 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             if (topic == null)
                 return NotFound();
+
+            // Kiểm tra quyền chỉnh sửa
+            if (CurrentUserRole != "Admin" && topic.UserId.ToString() != CurrentUserID)
+            {
+                TempData["Error"] = "Bạn không có quyền chỉnh sửa chủ đề này.";
+                return RedirectToAction(nameof(Index));
+            }
 
             // Store old visibility type and groups/users for comparison
             var oldVisibilityType = topic.VisibilityType;
@@ -486,6 +557,11 @@ namespace Do_An_Tot_Nghiep.Controllers
         // GET: Topics/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (id == null)
             {
                 return NotFound();
@@ -504,6 +580,13 @@ namespace Do_An_Tot_Nghiep.Controllers
                 return NotFound();
             }
 
+            // Kiểm tra quyền xóa
+            if (CurrentUserRole != "Admin" && topic.UserId.ToString() != CurrentUserID)
+            {
+                TempData["Error"] = "Bạn không có quyền xóa chủ đề này.";
+                return RedirectToAction(nameof(Index));
+            }
+
             return View(topic);
         }
 
@@ -512,114 +595,189 @@ namespace Do_An_Tot_Nghiep.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var topic = await _context.Topics
-                .Include(t => t.TopicTags)
-                .Include(t => t.TopicUsers)
-                .Include(t => t.TopicGroups)
-                .Include(t => t.Comments)
-                    .ThenInclude(c => c.Replies)
-                .Include(t => t.Notifications)
-                .FirstOrDefaultAsync(t => t.TopicId == id);
-
-            if (topic != null)
+            if (!IsLogin)
             {
-                // Xóa các like liên quan
-                var likes = _context.LikeTopics.Where(l => l.TopicId == topic.TopicId);
-                _context.LikeTopics.RemoveRange(likes);
+                return RedirectToAction("Login", "Account");
+            }
 
-                // Xóa các file vật lý nếu có
-                if (!string.IsNullOrEmpty(topic.ImageUrl))
+            try
+            {
+                var topic = await _context.Topics
+                    .Include(t => t.TopicTags)
+                    .Include(t => t.TopicUsers)
+                    .Include(t => t.TopicGroups)
+                    .Include(t => t.Comments)
+                        .ThenInclude(c => c.Replies)
+                    .Include(t => t.Notifications)
+                    .FirstOrDefaultAsync(t => t.TopicId == id);
+
+                if (topic != null)
                 {
-                    var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, topic.ImageUrl.TrimStart('/'));
-                    if (System.IO.File.Exists(imagePath))
+                    // Kiểm tra quyền xóa
+                    if (CurrentUserRole != "Admin" && topic.UserId.ToString() != CurrentUserID)
                     {
-                        System.IO.File.Delete(imagePath);
+                        TempData["Error"] = "Bạn không có quyền xóa chủ đề này.";
+                        return RedirectToAction(nameof(Index));
                     }
-                }
 
-                if (!string.IsNullOrEmpty(topic.FileUrl))
-                {
-                    var filePath = Path.Combine(_webHostEnvironment.WebRootPath, topic.FileUrl.TrimStart('/'));
-                    if (System.IO.File.Exists(filePath))
+                    // Xóa các like liên quan
+                    var likes = _context.LikeTopics.Where(l => l.TopicId == topic.TopicId);
+                    _context.LikeTopics.RemoveRange(likes);
+
+                    // Xóa các save liên quan
+                    var saves = _context.Saves.Where(s => s.TopicId == topic.TopicId);
+                    _context.Saves.RemoveRange(saves);
+
+                    // Xóa các file vật lý nếu có
+                    try
                     {
-                        System.IO.File.Delete(filePath);
-                    }
-                }
-
-                // Xóa tất cả các thông báo liên quan
-                if (topic.Notifications != null)
-                {
-                    _context.Notifications.RemoveRange(topic.Notifications);
-                }
-
-                // Xóa tất cả các bình luận và replies
-                if (topic.Comments != null)
-                {
-                    foreach (var comment in topic.Comments)
-                    {
-                        // Xóa ảnh của replies nếu có
-                        if (comment.Replies != null)
+                        if (!string.IsNullOrEmpty(topic.ImageUrl))
                         {
-                            foreach (var reply in comment.Replies)
+                            var imagePath = Path.Combine(_webHostEnvironment.WebRootPath, topic.ImageUrl.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                            if (System.IO.File.Exists(imagePath))
                             {
-                                if (!string.IsNullOrEmpty(reply.ImageUrl))
+                                System.IO.File.Delete(imagePath);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Lỗi xóa ảnh chủ đề: " + ex.Message);
+                    }
+
+                    try
+                    {
+                        if (!string.IsNullOrEmpty(topic.FileUrl))
+                        {
+                            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, topic.FileUrl.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                            if (System.IO.File.Exists(filePath))
+                            {
+                                System.IO.File.Delete(filePath);
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Lỗi xóa file chủ đề: " + ex.Message);
+                    }
+
+                    // Xóa tất cả các bình luận và replies
+                    if (topic.Comments != null)
+                    {
+                        foreach (var comment in topic.Comments)
+                        {
+                            // Xóa ảnh của replies nếu có
+                            if (comment.Replies != null)
+                            {
+                                foreach (var reply in comment.Replies)
                                 {
-                                    var replyImagePath = Path.Combine(_webHostEnvironment.WebRootPath, reply.ImageUrl.TrimStart('/'));
-                                    if (System.IO.File.Exists(replyImagePath))
+                                    try
                                     {
-                                        System.IO.File.Delete(replyImagePath);
+                                        if (!string.IsNullOrEmpty(reply.ImageUrl))
+                                        {
+                                            var replyImagePath = Path.Combine(_webHostEnvironment.WebRootPath, reply.ImageUrl.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                                            if (System.IO.File.Exists(replyImagePath))
+                                            {
+                                                System.IO.File.Delete(replyImagePath);
+                                            }
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        System.Diagnostics.Debug.WriteLine("Lỗi xóa ảnh reply: " + ex.Message);
+                                    }
+                                }
+                                _context.Comments.RemoveRange(comment.Replies);
+                            }
+
+                            // Xóa ảnh của comment nếu có
+                            try
+                            {
+                                if (!string.IsNullOrEmpty(comment.ImageUrl))
+                                {
+                                    var commentImagePath = Path.Combine(_webHostEnvironment.WebRootPath, comment.ImageUrl.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
+                                    if (System.IO.File.Exists(commentImagePath))
+                                    {
+                                        System.IO.File.Delete(commentImagePath);
                                     }
                                 }
                             }
-                            _context.Comments.RemoveRange(comment.Replies);
-                        }
-
-                        // Xóa ảnh của comment nếu có
-                        if (!string.IsNullOrEmpty(comment.ImageUrl))
-                        {
-                            var commentImagePath = Path.Combine(_webHostEnvironment.WebRootPath, comment.ImageUrl.TrimStart('/'));
-                            if (System.IO.File.Exists(commentImagePath))
+                            catch (Exception ex)
                             {
-                                System.IO.File.Delete(commentImagePath);
+                                System.Diagnostics.Debug.WriteLine("Lỗi xóa ảnh comment: " + ex.Message);
                             }
                         }
+                        _context.Comments.RemoveRange(topic.Comments);
                     }
-                    _context.Comments.RemoveRange(topic.Comments);
+
+                    // Xóa các liên kết trong bảng TopicTags
+                    if (topic.TopicTags != null)
+                    {
+                        _context.TopicTags.RemoveRange(topic.TopicTags);
+                    }
+
+                    // Xóa các liên kết trong bảng TopicUsers
+                    if (topic.TopicUsers != null)
+                    {
+                        _context.TopicUsers.RemoveRange(topic.TopicUsers);
+                    }
+
+                    // Xóa các liên kết trong bảng TopicGroups
+                    if (topic.TopicGroups != null)
+                    {
+                        _context.TopicGroups.RemoveRange(topic.TopicGroups);
+                    }
+
+                    // Xóa các thông báo liên quan
+                    if (topic.Notifications != null)
+                    {
+                        _context.Notifications.RemoveRange(topic.Notifications);
+                    }
+
+                    // Cuối cùng xóa Topic
+                    _context.Topics.Remove(topic);
+                    await _context.SaveChangesAsync();
                 }
 
-                // Xóa các liên kết trong bảng TopicTags
-                if (topic.TopicTags != null)
-                {
-                    _context.TopicTags.RemoveRange(topic.TopicTags);
-                }
-
-                // Xóa các liên kết trong bảng TopicUsers
-                if (topic.TopicUsers != null)
-                {
-                    _context.TopicUsers.RemoveRange(topic.TopicUsers);
-                }
-
-                // Xóa các liên kết trong bảng TopicGroups
-                if (topic.TopicGroups != null)
-                {
-                    _context.TopicGroups.RemoveRange(topic.TopicGroups);
-                }
-
-                // Cuối cùng xóa Topic
-                _context.Topics.Remove(topic);
-                await _context.SaveChangesAsync();
+                return RedirectToAction("Index", "Home", new { tab = "ChuDe" });
             }
-
-            return RedirectToAction("Index", "Home", new { tab = "ChuDe" });
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("Lỗi xóa chủ đề: " + ex.ToString());
+                return StatusCode(500, "Lỗi xóa chủ đề: " + ex.Message);
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> DeleteMultiple(int[] selectedTopics)
         {
+            if (!IsLogin)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
             if (selectedTopics == null || selectedTopics.Length == 0)
             {
                 TempData["ErrorMessage"] = "Bạn chưa chọn chủ đề nào để xóa.";
                 return RedirectToAction("Index");
+            }
+
+            // Kiểm tra quyền xóa cho từng chủ đề
+            if (CurrentUserRole != "Admin")
+            {
+                var topics = await _context.Topics
+                    .Where(t => selectedTopics.Contains(t.TopicId))
+                    .ToListAsync();
+
+                var unauthorizedTopics = topics
+                    .Where(t => t.UserId.ToString() != CurrentUserID)
+                    .ToList();
+
+                if (unauthorizedTopics.Any())
+                {
+                    TempData["ErrorMessage"] = "Bạn không có quyền xóa một số chủ đề đã chọn.";
+                    return RedirectToAction("Index");
+                }
             }
 
             foreach (var id in selectedTopics)
@@ -638,6 +796,10 @@ namespace Do_An_Tot_Nghiep.Controllers
                     // Xóa các like liên quan
                     var likes = _context.LikeTopics.Where(l => l.TopicId == topic.TopicId);
                     _context.LikeTopics.RemoveRange(likes);
+
+                    // Xóa các save liên quan
+                    var saves = _context.Saves.Where(s => s.TopicId == topic.TopicId);
+                    _context.Saves.RemoveRange(saves);
 
                     // Xóa các file vật lý nếu có
                     if (!string.IsNullOrEmpty(topic.ImageUrl))
@@ -734,7 +896,7 @@ namespace Do_An_Tot_Nghiep.Controllers
         [HttpPost]
         public async Task<IActionResult> ToggleLike(int id)
         {
-            if (!IsLogin || string.IsNullOrEmpty(CurrentUserID))
+            if (!IsLogin)
             {
                 return Json(new { success = false, message = "Vui lòng đăng nhập để thích chủ đề" });
             }

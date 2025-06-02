@@ -21,14 +21,12 @@ namespace Do_An_Tot_Nghiep.Models
         public int UserId { get; set; }
         public virtual User? User { get; set; }
 
-        [Required]
         [Column("content")]
         public string? Content { get; set; }
 
         [Column("image_url")]
         public string? ImageUrl { get; set; }
 
-        [Required]
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.Now;
       

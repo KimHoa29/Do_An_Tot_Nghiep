@@ -124,31 +124,46 @@ namespace Do_An_Tot_Nghiep.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateResponse([Bind("ParentCommentId,Content,ImageUrl")] Comment comment, IFormFile? ImageUpload)
+        public async Task<IActionResult> CreateResponse([Bind("ParentCommentId,Content,ImageUrl,TopicId")] Comment comment, IFormFile? ImageUpload)
         {
+            if (!IsLogin)
+                return Json(new { success = false, message = "Vui lòng đăng nhập để bình luận" });
+
             var parentComment = _context.Comments
                 .Include(c => c.User)
                 .Include(c => c.Topic)
                 .FirstOrDefault(m => m.CommentId == comment.ParentCommentId);
+
+            if (parentComment == null)
+                return Json(new { success = false, message = "Không tìm thấy bình luận cha" });
+
             comment.TopicId = parentComment.TopicId;
-            if (parentComment.ParentCommentId != null)
-            {
-                var grandfatherComment = parentComment.ParentCommentId;
-                comment.ParentCommentId = grandfatherComment;
-            }
 
             var currentUser = await _context.Users.FirstOrDefaultAsync(m => m.UserId.ToString().Equals(CurrentUserID));
             if (currentUser == null)
-            {
                 return Json(new { success = false, message = "Vui lòng đăng nhập để bình luận" });
-            }
+
             comment.UserId = currentUser.UserId;
             comment.CreatedAt = DateTime.Now;
 
+/*            // Chỉ kiểm tra ModelState sau khi đã gán các trường trên!
             if (!ModelState.IsValid)
             {
-                return Json(new { success = false, message = "Có lỗi xảy ra khi gửi bình luận" });
-            }
+                // Log các trường bị null
+                var nullFields = new List<string>();
+                if (comment.Content == null) nullFields.Add(nameof(comment.Content));
+                if (comment.TopicId == 0) nullFields.Add(nameof(comment.TopicId));
+                if (comment.ParentCommentId == null) nullFields.Add(nameof(comment.ParentCommentId));
+                if (comment.UserId == 0) nullFields.Add(nameof(comment.UserId));
+                if (comment.CreatedAt == default(DateTime)) nullFields.Add(nameof(comment.CreatedAt));
+                var nullFieldsString = string.Join(", ", nullFields);
+
+                var errors = ModelState
+                    .Where(x => x.Value.Errors.Count > 0)
+                    .Select(x => new { x.Key, Errors = x.Value.Errors.Select(e => e.ErrorMessage).ToList() })
+                    .ToList();
+                return Json(new { success = false, message = "Dữ liệu không hợp lệ", errors, nullFields = nullFieldsString });
+            }*/
 
             if (ImageUpload != null && ImageUpload.Length > 0)
             {
@@ -194,23 +209,25 @@ namespace Do_An_Tot_Nghiep.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            // Load the user information for the new comment
-            var commentWithUser = await _context.Comments
+            // Load the reply with user information for the response
+            var newReply = await _context.Comments
                 .Include(c => c.User)
                 .FirstOrDefaultAsync(c => c.CommentId == comment.CommentId);
 
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            return Json(new
             {
-                return Json(new
+                success = true,
+                reply = new
                 {
-                    success = true,
-                    html = await this.RenderViewToStringAsync("_CommentPartial", commentWithUser),
-                    commentId = comment.CommentId,
-                    commentCount = await _context.Comments.Where(c => c.TopicId == comment.TopicId).CountAsync()
-                });
-            }
-
-            return RedirectToAction("Details", "Topics", new { id = comment.TopicId });
+                    id = newReply.CommentId,
+                    content = newReply.Content,
+                    imageUrl = newReply.ImageUrl,
+                    createdAt = newReply.CreatedAt.ToString("HH:mm, dd/MM/yyyy"),
+                    username = newReply.User.Username,
+                    role = newReply.User.Role,
+                    avatar = string.IsNullOrEmpty(newReply.User.Avatar) ? "/css/img/default-avatar.jpg" : newReply.User.Avatar
+                }
+            });
         }
 
 

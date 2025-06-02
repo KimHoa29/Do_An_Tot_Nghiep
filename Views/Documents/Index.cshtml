@@ -45,7 +45,6 @@ else
                     <tr>
                         <th><input type="checkbox" id="selectAll" /></th>
                         <th>Tiêu đề</th>
-                        <th>Nội dung</th>
                         <th>Loại hiển thị</th>
                         <th>Ngày tạo</th>
                         <th>Ngày cập nhật</th>
@@ -63,7 +62,6 @@ else
                                 <input type="checkbox" name="selectedDocuments" value="@item.DocumentId" class="selectDocument" />
                             </td>
                             <td>@Html.Raw(@item.Title)</td>
-                            <td>@Html.Raw(@item.Content)</td>
                             <td>
                                 @{
                                     var type = item.VisibilityType?.ToLower();

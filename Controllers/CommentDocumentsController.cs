@@ -112,6 +112,12 @@ namespace Do_An_Tot_Nghiep.Controllers
                 return Json(new { success = false, message = "Vui lòng đăng nhập" });
             }
 
+            if (!ModelState.IsValid)
+            {
+                // Log lỗi ModelState
+                return Json(new { success = false, message = "Dữ liệu không hợp lệ" });
+            }
+
             var parentComment = _context.CommentDocuments
                 .Include(c => c.User)
                 .Include(c => c.Document)
