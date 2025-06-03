@@ -333,7 +333,14 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             // Kiểm tra quyền chỉnh sửa
             var currentUserId = CurrentUserID;
-            if (string.IsNullOrEmpty(currentUserId) || !int.TryParse(currentUserId, out int userId) || @group.CreatorUserId != userId)
+            if (string.IsNullOrEmpty(currentUserId) || !int.TryParse(currentUserId, out int userId))
+            {
+                TempData["Error"] = "Bạn không có quyền chỉnh sửa nhóm này.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Cho phép Admin và Giảng viên chỉnh sửa tất cả nhóm
+            if (CurrentUserRole != "Admin" && CurrentUserRole != "Lecturer" && @group.CreatorUserId != userId)
             {
                 TempData["Error"] = "Bạn không có quyền chỉnh sửa nhóm này.";
                 return RedirectToAction(nameof(Index));
@@ -369,7 +376,13 @@ namespace Do_An_Tot_Nghiep.Controllers
             }
 
             var existingGroup = await _context.Groups.FindAsync(id);
-            if (existingGroup == null || existingGroup.CreatorUserId != userId)
+            if (existingGroup == null)
+            {
+                return NotFound();
+            }
+
+            // Cho phép Admin và Giảng viên chỉnh sửa tất cả nhóm
+            if (CurrentUserRole != "Admin" && CurrentUserRole != "Lecturer" && existingGroup.CreatorUserId != userId)
             {
                 TempData["Error"] = "Bạn không có quyền chỉnh sửa nhóm này.";
                 return RedirectToAction(nameof(Index));
@@ -431,7 +444,14 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             // Kiểm tra quyền xóa
             var currentUserId = CurrentUserID;
-            if (string.IsNullOrEmpty(currentUserId) || !int.TryParse(currentUserId, out int userId) || @group.CreatorUserId != userId)
+            if (string.IsNullOrEmpty(currentUserId) || !int.TryParse(currentUserId, out int userId))
+            {
+                TempData["Error"] = "Bạn không có quyền xóa nhóm này.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Cho phép Admin và Giảng viên xóa tất cả nhóm
+            if (CurrentUserRole != "Admin" && CurrentUserRole != "Lecturer" && @group.CreatorUserId != userId)
             {
                 TempData["Error"] = "Bạn không có quyền xóa nhóm này.";
                 return RedirectToAction(nameof(Index));
@@ -459,7 +479,13 @@ namespace Do_An_Tot_Nghiep.Controllers
             }
 
             var group = await _context.Groups.FindAsync(id);
-            if (group == null || group.CreatorUserId != userId)
+            if (group == null)
+            {
+                return NotFound();
+            }
+
+            // Cho phép Admin và Giảng viên xóa tất cả nhóm
+            if (CurrentUserRole != "Admin" && CurrentUserRole != "Lecturer" && group.CreatorUserId != userId)
             {
                 TempData["Error"] = "Bạn không có quyền xóa nhóm này.";
                 return RedirectToAction(nameof(Index));

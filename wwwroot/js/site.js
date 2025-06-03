@@ -87,18 +87,37 @@ function deleteDocument(documentId) {
 
 function toggleDocumentLike(documentId) {
     const likeBtn = document.querySelector(`.like-btn[data-document-id="${documentId}"]`);
-    if (!likeBtn) return;
+    if (!likeBtn) {
+        console.error('Like button not found');
+        return;
+    }
+    
     const likeCountSpan = likeBtn.querySelector('.count-number');
+    if (!likeCountSpan) {
+        console.error('Like count span not found');
+        return;
+    }
+
     const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
-    const token = tokenInput ? tokenInput.value : '';
+    if (!tokenInput) {
+        console.error('Anti-forgery token not found');
+        alert('Có lỗi xảy ra khi thực hiện thao tác. Vui lòng tải lại trang và thử lại.');
+        return;
+    }
+
     fetch(`/Documents/ToggleLike/${documentId}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'RequestVerificationToken': token
+            'RequestVerificationToken': tokenInput.value
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             if (data.isLiked) {
@@ -108,7 +127,7 @@ function toggleDocumentLike(documentId) {
             }
             likeCountSpan.textContent = data.likeCount;
         } else {
-            alert(data.message);
+            alert(data.message || 'Có lỗi xảy ra khi thực hiện thao tác.');
         }
     })
     .catch(error => {
@@ -120,19 +139,30 @@ function toggleDocumentLike(documentId) {
 // Close menus when clicking outside
 if (typeof window !== 'undefined') {
     document.addEventListener('click', function(event) {
+        const postActions = document.querySelector('.post-actions');
+        const documentActions = document.querySelector('.document-actions');
+        const topicActions = document.querySelector('.topic-actions');
+        
         if (!event.target.closest('.post-actions') &&
             !event.target.closest('.document-actions') &&
             !event.target.closest('.topic-actions')) {
-            document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(menu => {
-                menu.classList.remove('show');
-            });
+            const menus = document.querySelectorAll('.post-menu, .document-menu, .topic-menu');
+            if (menus.length > 0) {
+                menus.forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
         }
     });
 
     // Prevent menu from closing when clicking inside
-    document.querySelectorAll('.post-menu, .document-menu, .topic-menu').forEach(menu => {
-        menu.addEventListener('click', function(event) {
-            event.stopPropagation();
+    const menus = document.querySelectorAll('.post-menu, .document-menu, .topic-menu');
+    if (menus.length > 0) {
+        menus.forEach(menu => {
+            menu.addEventListener('click', function(event) {
+                event.stopPropagation();
+            });
         });
-    });
+    }
 }
+

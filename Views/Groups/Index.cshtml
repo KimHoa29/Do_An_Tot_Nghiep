@@ -66,10 +66,9 @@ else
                                 // ----------------------------------
                             }
 
-                            @if (currentUserRole == "Admin" || currentUserRole == "Lecturer" || (currentUserRole == "Student" && item.CreatorUserId == currentUserIdInt))
+                            @if (currentUserRole == "Admin" || currentUserRole == "Lecturer")
                             {
-                                // Admin, Giảng viên luôn có quyền Sửa/Xóa/Chi tiết
-                                // Sinh viên có quyền Sửa/Xóa/Chi tiết ĐỐI VỚI nhóm mình tạo
+                                // Admin và Giảng viên có quyền Sửa/Xóa/Chi tiết với tất cả nhóm
                                 <a asp-action="Edit" asp-route-id="@item.GroupId" class="btn-sm text-warning" title="Sửa">
                                     <i class="fas fa-edit"></i>
                                 </a>
@@ -82,13 +81,25 @@ else
                             }
                             else if (currentUserRole == "Student")
                             {
-                                // Sinh viên chỉ có nút Chi tiết cho các nhóm họ là thành viên (đã lọc ở Controller)
-                                // Thêm nút Rời nhóm nếu không phải nhóm mình tạo
-                                <a asp-action="Details" asp-route-id="@item.GroupId" class="btn-sm text-info" title="Chi tiết">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                @if (item.CreatorUserId != currentUserIdInt)
+                                // Sinh viên chỉ có quyền Sửa/Xóa/Chi tiết với nhóm mình tạo
+                                if (item.CreatorUserId == currentUserIdInt)
                                 {
+                                    <a asp-action="Edit" asp-route-id="@item.GroupId" class="btn-sm text-warning" title="Sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a asp-action="Details" asp-route-id="@item.GroupId" class="btn-sm text-info" title="Chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.GroupId" class="btn-sm text-danger" title="Xóa" onclick="return confirm('Bạn có chắc chắn muốn xóa nhóm này?');">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                }
+                                else
+                                {
+                                    // Sinh viên chỉ có nút Chi tiết cho các nhóm họ là thành viên
+                                    <a asp-action="Details" asp-route-id="@item.GroupId" class="btn-sm text-info" title="Chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
                                     <form asp-action="LeaveGroup" method="post" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn rời nhóm này?');">
                                         <input type="hidden" name="groupId" value="@item.GroupId" />
                                         <button type="submit" class="btn-sm text-danger" title="Rời nhóm">

@@ -119,9 +119,9 @@
 
         <!-- Nút phản hồi và like -->
         <div class="actions mt-3">
-            <button class="action-btn like-btn @(isLiked ? "liked" : "")" onclick="TopicManager.toggleLike('@Model.TopicId')" data-topic-id="@Model.TopicId">
+            <button class="action-btn like-btn @(isLiked ? "liked" : "")" onclick="TopicManager.toggleLike('@Model.TopicId')" data-topic-id="@Model.TopicId" data-liked="@isLiked.ToString().ToLower()">
                 <i class="fas fa-heart"></i>
-                <span class="count-number">@likeCount</span>
+                <span class="count-number" id="like-count-@Model.TopicId">@likeCount</span>
             </button>
             <button class="action-btn comment-btn" type="button" onclick="TopicManager.toggleCommentBlock('@Model.TopicId')">
                 <i class="fas fa-comment"></i>
@@ -700,3 +700,67 @@
         color: #fff;
     }
 </style>
+
+<script>
+const TopicManager = {
+    init() {
+        // Initialize like buttons
+        document.querySelectorAll('.like-btn').forEach(btn => {
+            const topicId = btn.dataset.topicId;
+            const isLiked = btn.dataset.liked === 'true';
+            const countSpan = document.getElementById(`like-count-${topicId}`);
+            
+            if (countSpan) {
+                countSpan.textContent = countSpan.textContent || '0';
+            }
+            
+            if (isLiked) {
+                btn.classList.add('liked');
+            }
+        });
+    },
+
+    toggleLike(topicId) {
+        const likeBtn = document.querySelector(`.like-btn[data-topic-id="${topicId}"]`);
+        const likeCountSpan = document.getElementById(`like-count-${topicId}`);
+        
+        if (!likeBtn || !likeCountSpan) return;
+
+        fetch(`/Topics/ToggleLike/${topicId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.needLogin) {
+                window.location.href = '/Account/Login';
+                return;
+            }
+            if (data.success) {
+                likeBtn.dataset.liked = data.isLiked.toString();
+                if (data.isLiked) {
+                    likeBtn.classList.add('liked');
+                } else {
+                    likeBtn.classList.remove('liked');
+                }
+                likeCountSpan.textContent = data.likeCount;
+            } else {
+                alert(data.message || 'Có lỗi xảy ra khi thực hiện thao tác');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi thực hiện thao tác. Vui lòng thử lại sau.');
+        });
+    }
+};
+
+// Initialize when document is ready
+document.addEventListener('DOMContentLoaded', () => {
+    TopicManager.init();
+});
+</script>
