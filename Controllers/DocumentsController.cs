@@ -722,44 +722,58 @@ namespace Do_An_Tot_Nghiep.Controllers
                 return Json(new { success = false, message = "Có lỗi xảy ra, vui lòng thử lại" });
             }
 
-            var document = await _context.Documents
-                .Include(p => p.LikeDocuments)
-                .FirstOrDefaultAsync(p => p.DocumentId == id);
-
-            if (document == null)
+            int retryCount = 3;
+            while (retryCount > 0)
             {
-                return Json(new { success = false, message = "Tài liệu không tồn tại" });
-            }
-
-            var existingLike = await _context.LikeDocuments
-                .FirstOrDefaultAsync(l => l.DocumentId == id && l.UserId == currentUserId);
-
-            if (existingLike != null)
-            {
-                // Unlike
-                _context.LikeDocuments.Remove(existingLike);
-                await _context.SaveChangesAsync();
-
-                // Đếm lại số lượt like
-                var updatedLikeCount = await _context.LikeDocuments.CountAsync(l => l.DocumentId == id);
-                return Json(new { success = true, likeCount = updatedLikeCount, isLiked = false });
-            }
-            else
-            {
-                // Like
-                var newLike = new LikeDocument
+                try
                 {
-                    DocumentId = id,
-                    UserId = currentUserId,
-                    CreatedAt = DateTime.Now
-                };
-                _context.LikeDocuments.Add(newLike);
-                await _context.SaveChangesAsync();
+                    var document = await _context.Documents
+                        .Include(p => p.LikeDocuments)
+                        .FirstOrDefaultAsync(p => p.DocumentId == id);
 
-                // Đếm lại số lượt like
-                var updatedLikeCount = await _context.LikeDocuments.CountAsync(l => l.DocumentId == id);
-                return Json(new { success = true, likeCount = updatedLikeCount, isLiked = true });
+                    if (document == null)
+                    {
+                        return Json(new { success = false, message = "Tài liệu không tồn tại" });
+                    }
+
+                    var existingLike = await _context.LikeDocuments
+                        .FirstOrDefaultAsync(l => l.DocumentId == id && l.UserId == currentUserId);
+
+                    if (existingLike != null)
+                    {
+                        // Unlike
+                        _context.LikeDocuments.Remove(existingLike);
+                        await _context.SaveChangesAsync();
+
+                        // Đếm lại số lượt like
+                        var updatedLikeCount = await _context.LikeDocuments.CountAsync(l => l.DocumentId == id);
+                        return Json(new { success = true, likeCount = updatedLikeCount, isLiked = false });
+                    }
+                    else
+                    {
+                        // Like
+                        var newLike = new LikeDocument
+                        {
+                            DocumentId = id,
+                            UserId = currentUserId,
+                            CreatedAt = DateTime.Now
+                        };
+                        _context.LikeDocuments.Add(newLike);
+                        await _context.SaveChangesAsync();
+
+                        // Đếm lại số lượt like
+                        var updatedLikeCount = await _context.LikeDocuments.CountAsync(l => l.DocumentId == id);
+                        return Json(new { success = true, likeCount = updatedLikeCount, isLiked = true });
+                    }
+                }
+                catch (Microsoft.Data.SqlClient.SqlException ex) when (ex.Number == 1205) // Deadlock
+                {
+                    retryCount--;
+                    if (retryCount == 0) throw;
+                    await Task.Delay(100);
+                }
             }
+            return Json(new { success = false, message = "Có lỗi xảy ra khi xử lý like. Vui lòng thử lại." });
         }
 
         [HttpGet]

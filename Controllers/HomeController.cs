@@ -66,80 +66,143 @@ namespace Do_An_Tot_Nghiep.Controllers
             {
                 return RedirectToAction("Login", "Account");
             }
+            else
+            {
+                var currentUserId = CurrentUserID;
+                _logger.LogInformation($"Current User ID: {currentUserId}");
 
-            var currentUserId = CurrentUserID;
-            
-            // Cache key for each type of content
-            var topicsCacheKey = $"topics_{currentUserId}";
-            var documentsCacheKey = $"documents_{currentUserId}";
-            var postsCacheKey = $"posts_{currentUserId}";
-
-            // Try to get from cache first
-            var topics = await _context.Topics
+                var topics = await _context.Topics
+                .AsSplitQuery()
                 .Include(t => t.User)
                 .Include(t => t.TopicTags)
                     .ThenInclude(tt => tt.Tag)
                 .Include(t => t.TopicGroups)
                     .ThenInclude(tg => tg.Group)
+                        .ThenInclude(g => g.GroupUsers)
+                .Include(t => t.TopicUsers)
                 .Include(t => t.Comments)
                     .ThenInclude(c => c.User)
+                .Include(t => t.Comments)
+                    .ThenInclude(c => c.Replies)
+                        .ThenInclude(r => r.User)
                 .Include(t => t.LikeTopics)
                 .Include(t => t.Saves)
                 .Where(t =>
                     t.VisibilityType == "public" ||
                     t.UserId.ToString() == currentUserId ||
                     (t.VisibilityType == "private" && t.UserId.ToString() == currentUserId) ||
-                    (t.VisibilityType == "group" && t.TopicGroups.Any(tg => 
+                    (t.VisibilityType == "group" && t.TopicGroups.Any(tg =>
                         tg.Group.GroupUsers.Any(gu => gu.UserId.ToString() == currentUserId))) ||
                     (t.VisibilityType == "custom" && t.TopicUsers.Any(tu => tu.UserId.ToString() == currentUserId))
                 )
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
-            var documents = await _context.Documents
+                // Chỉ lấy 4 bài đăng đầu tiên
+                var documents = await _context.Documents
+                    .AsSplitQuery()
+                    .Include(t => t.User)
+                    .Include(t => t.DocumentGroups)
+                        .ThenInclude(dg => dg.Group)
+                            .ThenInclude(g => g.GroupUsers)
+                    .Include(t => t.DocumentUsers)
+                    .Include(t => t.CommentDocuments)
+                        .ThenInclude(c => c.User)
+                    .Include(t => t.CommentDocuments)
+                        .ThenInclude(c => c.Replies)
+                            .ThenInclude(r => r.User)
+                    .Include(t => t.LikeDocuments)
+                    .Include(t => t.Saves)
+                    .Where(t =>
+                        t.VisibilityType == "public" ||
+                        t.UserId.ToString() == currentUserId ||
+                        (t.VisibilityType == "private" && t.UserId.ToString() == currentUserId) ||
+                        (t.VisibilityType == "group" && t.DocumentGroups.Any(dg =>
+                            dg.Group.GroupUsers.Any(gu => gu.UserId.ToString() == currentUserId))) ||
+                        (t.VisibilityType == "custom" && t.DocumentUsers.Any(du => du.UserId.ToString() == currentUserId))
+                    )
+                    .OrderByDescending(t => t.CreatedAt)
+                    .Take(4)
+                    .ToListAsync();
+
+                var posts = await _context.Posts
+                .AsSplitQuery()
                 .Include(t => t.User)
-                .Include(t => t.DocumentGroups)
-                    .ThenInclude(dg => dg.Group)
-                .Include(t => t.CommentDocuments)
+                .Include(t => t.PostGroups)
+                    .ThenInclude(pg => pg.Group)
+                        .ThenInclude(g => g.GroupUsers)
+                .Include(t => t.PostUsers)
+                .Include(t => t.CommentPosts)
                     .ThenInclude(c => c.User)
-                .Include(t => t.LikeDocuments)
+                .Include(t => t.CommentPosts)
+                    .ThenInclude(c => c.Replies)
+                        .ThenInclude(r => r.User)
+                .Include(t => t.LikePosts)
+                    .ThenInclude(l => l.User)
+                .Include(t => t.PostMentions)
+                    .ThenInclude(pm => pm.User)
                 .Include(t => t.Saves)
                 .Where(t =>
                     t.VisibilityType == "public" ||
                     t.UserId.ToString() == currentUserId ||
                     (t.VisibilityType == "private" && t.UserId.ToString() == currentUserId) ||
-                    (t.VisibilityType == "group" && t.DocumentGroups.Any(dg => 
-                        dg.Group.GroupUsers.Any(gu => gu.UserId.ToString() == currentUserId))) ||
-                    (t.VisibilityType == "custom" && t.DocumentUsers.Any(du => du.UserId.ToString() == currentUserId))
-                )
-                .OrderByDescending(t => t.CreatedAt)
-                .Take(4)
-                .ToListAsync();
-
-            var posts = await _context.Posts
-                .Include(t => t.User)
-                .Include(t => t.PostGroups)
-                    .ThenInclude(pg => pg.Group)
-                .Include(t => t.CommentPosts)
-                    .ThenInclude(c => c.User)
-                .Include(t => t.LikePosts)
-                .Where(t =>
-                    t.VisibilityType == "public" ||
-                    t.UserId.ToString() == currentUserId ||
-                    (t.VisibilityType == "private" && t.UserId.ToString() == currentUserId) ||
-                    (t.VisibilityType == "group" && t.PostGroups.Any(pg => 
+                    (t.VisibilityType == "group" && t.PostGroups.Any(pg =>
                         pg.Group.GroupUsers.Any(gu => gu.UserId.ToString() == currentUserId))) ||
                     (t.VisibilityType == "custom" && t.PostUsers.Any(pu => pu.UserId.ToString() == currentUserId))
                 )
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
 
-            ViewBag.SelectedTab = tab;
-            ViewBag.document = documents;
-            ViewBag.topic = topics;
-            ViewBag.post = posts;
-            ViewBag.currentUserID = CurrentUserID;
-            return View();
+                // Log thông tin chi tiết về các truy vấn
+                foreach (var topic in topics)
+                {
+                    _logger.LogInformation($"Topic found - ID: {topic.TopicId}, Type: {topic.VisibilityType}, Creator: {topic.UserId}");
+                    if (topic.VisibilityType == "group")
+                    {
+                        foreach (var tg in topic.TopicGroups)
+                        {
+                            _logger.LogInformation($"Topic {topic.TopicId} belongs to group {tg.GroupId}");
+                            var groupMembers = tg.Group.GroupUsers.Select(gu => gu.UserId).ToList();
+                            _logger.LogInformation($"Group {tg.GroupId} members: {string.Join(", ", groupMembers)}");
+                        }
+                    }
+                }
+
+                foreach (var doc in documents)
+                {
+                    _logger.LogInformation($"Document found - ID: {doc.DocumentId}, Type: {doc.VisibilityType}, Creator: {doc.UserId}");
+                    if (doc.VisibilityType == "group")
+                    {
+                        foreach (var dg in doc.DocumentGroups)
+                        {
+                            _logger.LogInformation($"Document {doc.DocumentId} belongs to group {dg.GroupId}");
+                            var groupMembers = dg.Group.GroupUsers.Select(gu => gu.UserId).ToList();
+                            _logger.LogInformation($"Group {dg.GroupId} members: {string.Join(", ", groupMembers)}");
+                        }
+                    }
+                }
+
+                foreach (var post in posts)
+                {
+                    _logger.LogInformation($"Post found - ID: {post.PostId}, Type: {post.VisibilityType}, Creator: {post.UserId}");
+                    if (post.VisibilityType == "group")
+                    {
+                        foreach (var pg in post.PostGroups)
+                        {
+                            _logger.LogInformation($"Post {post.PostId} belongs to group {pg.GroupId}");
+                            var groupMembers = pg.Group.GroupUsers.Select(gu => gu.UserId).ToList();
+                            _logger.LogInformation($"Group {pg.GroupId} members: {string.Join(", ", groupMembers)}");
+                        }
+                    }
+                }
+
+                ViewBag.SelectedTab = tab;
+                ViewBag.document = documents;
+                ViewBag.topic = topics;
+                ViewBag.post = posts;
+                ViewBag.currentUserID = CurrentUserID;
+                return View();
+            }
         }
 
         [HttpGet]
@@ -152,6 +215,7 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             var currentUserId = CurrentUserID;
             var documents = await _context.Documents
+                .AsSplitQuery()
                 .Include(t => t.User)
                 .Include(t => t.DocumentGroups)
                     .ThenInclude(dg => dg.Group)
@@ -168,7 +232,7 @@ namespace Do_An_Tot_Nghiep.Controllers
                     t.VisibilityType == "public" ||
                     t.UserId.ToString() == currentUserId ||
                     (t.VisibilityType == "private" && t.UserId.ToString() == currentUserId) ||
-                    (t.VisibilityType == "group" && t.DocumentGroups.Any(dg => 
+                    (t.VisibilityType == "group" && t.DocumentGroups.Any(dg =>
                         dg.Group.GroupUsers.Any(gu => gu.UserId.ToString() == currentUserId))) ||
                     (t.VisibilityType == "custom" && t.DocumentUsers.Any(du => du.UserId.ToString() == currentUserId))
                 )
@@ -201,6 +265,7 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             var currentUserId = CurrentUserID;
             var posts = await _context.Posts
+                .AsSplitQuery()
                 .Include(t => t.User)
                 .Include(t => t.PostGroups)
                     .ThenInclude(pg => pg.Group)
@@ -220,7 +285,7 @@ namespace Do_An_Tot_Nghiep.Controllers
                     t.VisibilityType == "public" ||
                     t.UserId.ToString() == currentUserId ||
                     (t.VisibilityType == "private" && t.UserId.ToString() == currentUserId) ||
-                    (t.VisibilityType == "group" && t.PostGroups.Any(pg => 
+                    (t.VisibilityType == "group" && t.PostGroups.Any(pg =>
                         pg.Group.GroupUsers.Any(gu => gu.UserId.ToString() == currentUserId))) ||
                     (t.VisibilityType == "custom" && t.PostUsers.Any(pu => pu.UserId.ToString() == currentUserId))
                 )
@@ -253,6 +318,7 @@ namespace Do_An_Tot_Nghiep.Controllers
 
             var currentUserId = CurrentUserID;
             var topics = await _context.Topics
+                .AsSplitQuery()
                 .Include(t => t.User)
                 .Include(t => t.TopicTags)
                     .ThenInclude(tt => tt.Tag)
@@ -271,7 +337,7 @@ namespace Do_An_Tot_Nghiep.Controllers
                     t.VisibilityType == "public" ||
                     t.UserId.ToString() == currentUserId ||
                     (t.VisibilityType == "private" && t.UserId.ToString() == currentUserId) ||
-                    (t.VisibilityType == "group" && t.TopicGroups.Any(tg => 
+                    (t.VisibilityType == "group" && t.TopicGroups.Any(tg =>
                         tg.Group.GroupUsers.Any(gu => gu.UserId.ToString() == currentUserId))) ||
                     (t.VisibilityType == "custom" && t.TopicUsers.Any(tu => tu.UserId.ToString() == currentUserId))
                 )

@@ -1,4 +1,4 @@
-﻿@{
+﻿﻿@{
     var topics = ViewBag.topic as IEnumerable<Do_An_Tot_Nghiep.Models.Topic>;
     var documents = ViewBag.document as IEnumerable<Do_An_Tot_Nghiep.Models.Document>;
     var posts = ViewBag.post as IEnumerable<Do_An_Tot_Nghiep.Models.Post>;
@@ -148,18 +148,18 @@
         transition: all 0.3s ease;
     }
 
-    .tab:hover {
-        color: #9c27b0;
-    }
+        .tab:hover {
+            color: #9c27b0;
+        }
 
-    .tab.active {
-        color: #9c27b0;
-        border-bottom: 3px solid #9c27b0;
-    }
+        .tab.active {
+            color: #9c27b0;
+            border-bottom: 3px solid #9c27b0;
+        }
 
-    .tab i {
-        margin-right: 0.5rem;
-    }
+        .tab i {
+            margin-right: 0.5rem;
+        }
 
     .tab-content-wrapper {
         position: relative;
@@ -172,11 +172,11 @@
         transition: opacity 0.3s ease;
     }
 
-    .tab-content.active {
-        display: block;
-        opacity: 1;
-        visibility: visible;
-    }
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+            visibility: visible;
+        }
 
     .content-container {
         background: #fff;
@@ -248,13 +248,13 @@
         transition: all 0.3s ease;
     }
 
-    .file-label:hover {
-        background: #e0e0e0;
-    }
+        .file-label:hover {
+            background: #e0e0e0;
+        }
 
-    .file-label i {
-        margin-right: 0.5rem;
-    }
+        .file-label i {
+            margin-right: 0.5rem;
+        }
 
     .documents-list, .topics-list {
         margin-top: 2rem;
@@ -279,11 +279,11 @@
         cursor: pointer;
     }
 
-    .btn-dainam-orange:hover {
-        background: linear-gradient(135deg, #FB8C00, #FFB74D);
-        transform: translateY(-2px);
-        box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
-    }
+        .btn-dainam-orange:hover {
+            background: linear-gradient(135deg, #FB8C00, #FFB74D);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+        }
 </style>
 
 <script>
@@ -295,7 +295,7 @@
             content.style.opacity = "0";
             content.style.visibility = "hidden";
         });
-        
+
         // Add active class to clicked tab and corresponding content
         element.classList.add("active");
         const tabId = element.getAttribute("data-tab");
@@ -303,7 +303,7 @@
         targetContent.classList.add("active");
         targetContent.style.opacity = "1";
         targetContent.style.visibility = "visible";
-        
+
         // Save selected tab to localStorage
         localStorage.setItem("selectedTab", tabId);
 

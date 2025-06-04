@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,7 +60,20 @@ builder.Services.AddAuthentication("Cookies")
     });
 
 builder.Services.AddHttpClient();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
+    options.MaximumReceiveMessageSize = 102400; // 100 KB
+    options.HandshakeTimeout = TimeSpan.FromSeconds(15);
+    options.KeepAliveInterval = TimeSpan.FromSeconds(10);
+});
+
+// Ensure uploads directory exists
+var uploadsPath = Path.Combine(builder.Environment.WebRootPath, "uploads", "images");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
 
 var app = builder.Build();
 

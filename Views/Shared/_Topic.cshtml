@@ -1,4 +1,4 @@
-﻿@using Do_An_Tot_Nghiep.Models
+﻿﻿@using Do_An_Tot_Nghiep.Models
 @model Topic
 
 @{
@@ -119,9 +119,9 @@
 
         <!-- Nút phản hồi và like -->
         <div class="actions mt-3">
-            <button class="action-btn like-btn @(isLiked ? "liked" : "")" onclick="TopicManager.toggleLike('@Model.TopicId')" data-topic-id="@Model.TopicId" data-liked="@isLiked.ToString().ToLower()">
+            <button class="action-btn like-btn @(isLiked ? "liked" : "")" onclick="TopicManager.toggleLike('@Model.TopicId')" data-topic-id="@Model.TopicId">
                 <i class="fas fa-heart"></i>
-                <span class="count-number" id="like-count-@Model.TopicId">@likeCount</span>
+                <span class="count-number">@likeCount</span>
             </button>
             <button class="action-btn comment-btn" type="button" onclick="TopicManager.toggleCommentBlock('@Model.TopicId')">
                 <i class="fas fa-comment"></i>
@@ -455,25 +455,30 @@
     .reply-item[data-level="1"] {
         margin-left: 0 !important;
     }
+
     .reply-item[data-level="2"] {
         margin-left: 45px !important;
     }
+
     .reply-item[data-level="3"],
     .reply-item[data-level="4"],
     .reply-item[data-level="5"],
     .reply-item[data-level="6"] {
         margin-left: 45px !important;
     }
-    .reply-item[data-level="3"] .reply-line,
-    .reply-item[data-level="4"] .reply-line,
-    .reply-item[data-level="5"] .reply-line,
-    .reply-item[data-level="6"] .reply-line {
-        display: none !important;
-    }
+
+        .reply-item[data-level="3"] .reply-line,
+        .reply-item[data-level="4"] .reply-line,
+        .reply-item[data-level="5"] .reply-line,
+        .reply-item[data-level="6"] .reply-line {
+            display: none !important;
+        }
+
     .nested-replies {
         margin-left: 0 !important;
         padding-left: 0 !important;
     }
+
     .reply-item {
         padding-left: 0 !important;
     }
@@ -661,11 +666,13 @@
         resize: none;
         transition: border 0.2s;
     }
-    .comment-input:focus {
-        border: 1.5px solid #a259c3;
-        background: #fff;
-        box-shadow: 0 2px 8px rgba(162,89,195,0.08);
-    }
+
+        .comment-input:focus {
+            border: 1.5px solid #a259c3;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(162,89,195,0.08);
+        }
+
     .comment-image-label {
         position: absolute;
         right: 12px;
@@ -680,9 +687,11 @@
         padding: 2px 4px;
         transition: background 0.2s;
     }
-    .comment-image-label:hover {
-        background: #f3e6fa;
-    }
+
+        .comment-image-label:hover {
+            background: #f3e6fa;
+        }
+
     .comment-submit-btn {
         background: linear-gradient(90deg, #a259c3 0%, #7b2ff2 100%);
         color: #fff;
@@ -695,72 +704,9 @@
         box-shadow: 0 2px 8px rgba(162,89,195,0.08);
         transition: background 0.2s;
     }
-    .comment-submit-btn:hover {
-        background: linear-gradient(90deg, #7b2ff2 0%, #a259c3 100%);
-        color: #fff;
-    }
+
+        .comment-submit-btn:hover {
+            background: linear-gradient(90deg, #7b2ff2 0%, #a259c3 100%);
+            color: #fff;
+        }
 </style>
-
-<script>
-const TopicManager = {
-    init() {
-        // Initialize like buttons
-        document.querySelectorAll('.like-btn').forEach(btn => {
-            const topicId = btn.dataset.topicId;
-            const isLiked = btn.dataset.liked === 'true';
-            const countSpan = document.getElementById(`like-count-${topicId}`);
-            
-            if (countSpan) {
-                countSpan.textContent = countSpan.textContent || '0';
-            }
-            
-            if (isLiked) {
-                btn.classList.add('liked');
-            }
-        });
-    },
-
-    toggleLike(topicId) {
-        const likeBtn = document.querySelector(`.like-btn[data-topic-id="${topicId}"]`);
-        const likeCountSpan = document.getElementById(`like-count-${topicId}`);
-        
-        if (!likeBtn || !likeCountSpan) return;
-
-        fetch(`/Topics/ToggleLike/${topicId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-            },
-            credentials: 'same-origin'
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.needLogin) {
-                window.location.href = '/Account/Login';
-                return;
-            }
-            if (data.success) {
-                likeBtn.dataset.liked = data.isLiked.toString();
-                if (data.isLiked) {
-                    likeBtn.classList.add('liked');
-                } else {
-                    likeBtn.classList.remove('liked');
-                }
-                likeCountSpan.textContent = data.likeCount;
-            } else {
-                alert(data.message || 'Có lỗi xảy ra khi thực hiện thao tác');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Có lỗi xảy ra khi thực hiện thao tác. Vui lòng thử lại sau.');
-        });
-    }
-};
-
-// Initialize when document is ready
-document.addEventListener('DOMContentLoaded', () => {
-    TopicManager.init();
-});
-</script>
